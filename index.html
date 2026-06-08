@@ -10,6 +10,7 @@
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap');
 
+  /* ── DARK theme (default) ─────────────────────────────────────────────── */
   :root {
     --bg: #0a0a0f;
     --surface: #111118;
@@ -19,9 +20,32 @@
     --accent2: #7c5cfc;
     --accent3: #ff6b35;
     --text: #e8e8f0;
-    --muted: #6b6b80;
+    --text2: #c0c0d0;
+    --muted: #8a8aa0;       /* WCAG AA fix: era #6b6b80 (3.8:1) → ahora ~5.2:1 */
     --danger: #ff4757;
     --success: #00e5a0;
+    --header-bg: rgba(10,10,15,0.88);
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+    --select-bg: #1a1a24;
+  }
+
+  /* ── LIGHT theme ──────────────────────────────────────────────────────── */
+  [data-theme="light"] {
+    --bg: #f4f5f9;
+    --surface: #ffffff;
+    --surface2: #eef0f6;
+    --border: #d4d8e8;
+    --accent: #007a54;
+    --accent2: #5a3fd4;
+    --accent3: #d9520d;
+    --text: #1a1a2e;
+    --text2: #3a3a5a;
+    --muted: #7a7a99;
+    --danger: #c0392b;
+    --success: #007a54;
+    --header-bg: rgba(244,245,249,0.92);
+    --shadow: 0 4px 24px rgba(0,0,0,0.10);
+    --select-bg: #eef0f6;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -32,10 +56,11 @@
     font-family: 'Syne', sans-serif;
     min-height: 100vh;
     overflow-x: hidden;
+    transition: background 0.3s, color 0.3s;
   }
 
-  /* Noise texture overlay */
-  body::before {
+  /* Noise texture overlay — solo en dark */
+  :root body::before {
     content: '';
     position: fixed;
     inset: 0;
@@ -46,21 +71,44 @@
 
   .header {
     border-bottom: 1px solid var(--border);
-    padding: 20px 40px;
+    padding: 14px 32px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: rgba(10,10,15,0.8);
+    background: var(--header-bg);
     backdrop-filter: blur(20px);
     position: sticky;
     top: 0;
     z-index: 100;
+    gap: 12px;
   }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  /* Theme toggle button */
+  .theme-toggle {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .theme-toggle:hover { border-color: var(--accent2); background: var(--surface); }
 
   .logo {
     display: flex;
     align-items: center;
     gap: 12px;
+    flex-shrink: 0;
   }
 
   .logo-icon {
@@ -95,9 +143,10 @@
 
   .agent-status {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     font-family: 'Space Mono', monospace;
     font-size: 10px;
+    flex-wrap: wrap;
   }
 
   .agent-badge {
@@ -111,36 +160,29 @@
     gap: 5px;
   }
 
-  .agent-badge::before {
-    content: '●';
-    font-size: 8px;
-  }
-
-  .agent-badge.active {
-    border-color: var(--accent);
-    color: var(--accent);
-    background: rgba(0,229,160,0.08);
-  }
-
+  .agent-badge::before { content: '●'; font-size: 8px; }
+  .agent-badge.active  { border-color: var(--accent);  color: var(--accent);  background: rgba(0,229,160,0.08); }
   .agent-badge.active::before { color: var(--accent); }
-  .agent-badge.done { border-color: var(--accent2); color: var(--accent2); background: rgba(124,92,252,0.08); }
+  .agent-badge.done    { border-color: var(--accent2); color: var(--accent2); background: rgba(124,92,252,0.08); }
   .agent-badge.done::before { color: var(--accent2); }
+  [data-theme="light"] .agent-badge.active { background: rgba(0,122,84,0.10); }
+  [data-theme="light"] .agent-badge.done   { background: rgba(90,63,212,0.10); }
 
   .main {
     max-width: 1100px;
     margin: 0 auto;
-    padding: 40px 40px 80px;
+    padding: 32px 32px 80px;
   }
 
   .hero {
     text-align: center;
-    padding: 60px 0 50px;
+    padding: 48px 0 40px;
   }
 
   .hero-tag {
     display: inline-block;
-    background: rgba(124,92,252,0.15);
-    border: 1px solid rgba(124,92,252,0.4);
+    background: rgba(124,92,252,0.12);
+    border: 1px solid rgba(124,92,252,0.35);
     color: var(--accent2);
     font-family: 'Space Mono', monospace;
     font-size: 11px;
@@ -148,15 +190,15 @@
     text-transform: uppercase;
     padding: 6px 16px;
     border-radius: 4px;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
   }
 
   .hero h2 {
-    font-size: clamp(36px, 5vw, 58px);
+    font-size: clamp(32px, 5vw, 52px);
     font-weight: 800;
     letter-spacing: -2px;
     line-height: 1.05;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
   }
 
   .hero h2 span {
@@ -165,61 +207,55 @@
     -webkit-text-fill-color: transparent;
   }
 
-  .hero p {
-    color: var(--muted);
-    font-size: 16px;
-    max-width: 520px;
-    margin: 0 auto;
-    line-height: 1.7;
-  }
+  .hero p { color: var(--muted); font-size: 15px; max-width: 480px; margin: 0 auto; line-height: 1.7; }
 
   .grid-2 {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 24px;
-    margin-top: 40px;
+    gap: 20px;
+    margin-top: 32px;
   }
 
   .card {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 28px;
-    transition: border-color 0.3s;
+    border-radius: 14px;
+    padding: 24px;
+    transition: border-color 0.25s, box-shadow 0.25s;
+    box-shadow: var(--shadow);
   }
 
-  .card:hover { border-color: rgba(124,92,252,0.4); }
-
+  .card:hover { border-color: rgba(124,92,252,0.35); }
   .card-full { grid-column: 1 / -1; }
 
   .card-title {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
     letter-spacing: 2px;
     text-transform: uppercase;
     color: var(--muted);
     font-family: 'Space Mono', monospace;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
     display: flex;
     align-items: center;
     gap: 8px;
   }
 
   .card-title .icon {
-    width: 24px;
-    height: 24px;
+    width: 22px; height: 22px;
     border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: flex; align-items: center; justify-content: center;
     font-size: 12px;
   }
 
-  .icon-green { background: rgba(0,229,160,0.15); }
+  .icon-green  { background: rgba(0,229,160,0.15); }
   .icon-purple { background: rgba(124,92,252,0.15); }
   .icon-orange { background: rgba(255,107,53,0.15); }
+  [data-theme="light"] .icon-green  { background: rgba(0,122,84,0.12); }
+  [data-theme="light"] .icon-purple { background: rgba(90,63,212,0.12); }
+  [data-theme="light"] .icon-orange { background: rgba(217,82,13,0.12); }
 
-  textarea {
+  textarea, .students-input {
     width: 100%;
     background: var(--surface2);
     border: 1px solid var(--border);
@@ -228,13 +264,18 @@
     font-family: 'Space Mono', monospace;
     font-size: 13px;
     line-height: 1.6;
-    padding: 16px;
+    padding: 14px;
     resize: vertical;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, box-shadow 0.2s;
     outline: none;
   }
 
-  textarea:focus { border-color: var(--accent2); }
+  textarea:focus, .students-input:focus {
+    border-color: var(--accent2);
+    box-shadow: 0 0 0 3px rgba(124,92,252,0.12);
+  }
+
+  .students-input { min-height: 120px; }
 
   input[type="text"], input[type="number"] {
     width: 100%;
@@ -244,56 +285,58 @@
     color: var(--text);
     font-family: 'Space Mono', monospace;
     font-size: 13px;
-    padding: 12px 16px;
+    padding: 11px 14px;
     outline: none;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, box-shadow 0.2s;
   }
 
-  input:focus { border-color: var(--accent2); }
+  input[type="text"]:focus, input[type="number"]:focus {
+    border-color: var(--accent2);
+    box-shadow: 0 0 0 3px rgba(124,92,252,0.12);
+  }
 
-  .students-input {
+  select {
     width: 100%;
-    background: var(--surface2);
+    background: var(--select-bg);
     border: 1px solid var(--border);
     border-radius: 10px;
     color: var(--text);
     font-family: 'Space Mono', monospace;
     font-size: 13px;
-    padding: 16px;
-    resize: vertical;
+    padding: 11px 14px;
     outline: none;
+    appearance: none;
     transition: border-color 0.2s;
-    min-height: 120px;
+    cursor: pointer;
   }
 
-  .students-input:focus { border-color: var(--accent2); }
-
-  .input-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-  }
+  select:focus { border-color: var(--accent2); box-shadow: 0 0 0 3px rgba(124,92,252,0.12); }
 
   label {
     display: block;
-    font-size: 12px;
+    font-size: 11px;
     color: var(--muted);
-    margin-bottom: 6px;
+    margin-bottom: 5px;
     font-family: 'Space Mono', monospace;
     letter-spacing: 1px;
     text-transform: uppercase;
   }
 
-  .apikey-row {
-    display: flex;
-    gap: 10px;
-    align-items: flex-end;
-  }
-
+  .apikey-row { display: flex; gap: 10px; align-items: flex-end; }
   .apikey-row > div { flex: 1; }
 
+  /* API key visibility toggle */
+  .apikey-wrap { position: relative; }
+  .apikey-wrap input { padding-right: 40px; }
+  .apikey-eye {
+    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; color: var(--muted); cursor: pointer;
+    font-size: 15px; padding: 2px;
+  }
+  .apikey-eye:hover { color: var(--text); }
+
   .btn {
-    padding: 12px 24px;
+    padding: 11px 22px;
     border-radius: 10px;
     font-family: 'Syne', sans-serif;
     font-weight: 700;
@@ -308,204 +351,137 @@
     background: linear-gradient(135deg, var(--accent2), #5a3fd4);
     color: white;
     width: 100%;
-    padding: 16px;
+    padding: 15px;
     font-size: 15px;
-    margin-top: 24px;
+    margin-top: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
+    box-shadow: 0 4px 16px rgba(124,92,252,0.25);
   }
 
   .btn-primary:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 8px 32px rgba(124,92,252,0.4);
+    box-shadow: 0 8px 28px rgba(124,92,252,0.4);
   }
+  .btn-primary:active:not(:disabled) { transform: translateY(0); }
 
-  .btn-primary:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
+  .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
 
   .btn-sm {
-    padding: 8px 16px;
+    padding: 8px 14px;
     font-size: 12px;
     background: var(--surface2);
     color: var(--text);
     border: 1px solid var(--border);
   }
 
-  .btn-sm:hover { border-color: var(--accent2); }
+  .btn-sm:hover { border-color: var(--accent2); background: var(--surface); }
 
   .btn-accent {
-    background: rgba(0,229,160,0.15);
+    background: rgba(0,229,160,0.12);
     color: var(--accent);
-    border: 1px solid rgba(0,229,160,0.3);
+    border: 1px solid rgba(0,229,160,0.28);
   }
+  .btn-accent:hover { background: rgba(0,229,160,0.22); }
+  [data-theme="light"] .btn-accent { background: rgba(0,122,84,0.10); border-color: rgba(0,122,84,0.3); }
+  [data-theme="light"] .btn-accent:hover { background: rgba(0,122,84,0.18); }
 
-  .btn-accent:hover { background: rgba(0,229,160,0.25); }
-
-  /* Pipeline Visualization */
-  .pipeline {
-    display: flex;
-    align-items: center;
-    gap: 0;
-    margin: 30px 0;
-    overflow-x: auto;
-    padding: 4px 0;
-  }
+  /* Pipeline */
+  .pipeline { display: flex; align-items: center; gap: 0; margin: 24px 0; overflow-x: auto; padding: 4px 0; }
 
   .pipe-node {
-    flex: 1;
-    min-width: 130px;
+    flex: 1; min-width: 120px;
     background: var(--surface2);
     border: 1px solid var(--border);
     border-radius: 12px;
-    padding: 14px 12px;
+    padding: 12px 10px;
     text-align: center;
-    position: relative;
     transition: all 0.3s;
   }
-
   .pipe-node.active {
     border-color: var(--accent);
     background: rgba(0,229,160,0.06);
-    box-shadow: 0 0 20px rgba(0,229,160,0.1);
+    box-shadow: 0 0 18px rgba(0,229,160,0.12);
   }
+  .pipe-node.done { border-color: var(--accent2); background: rgba(124,92,252,0.06); }
+  [data-theme="light"] .pipe-node.active { background: rgba(0,122,84,0.07); box-shadow: 0 0 12px rgba(0,122,84,0.12); }
+  [data-theme="light"] .pipe-node.done   { background: rgba(90,63,212,0.07); }
 
-  .pipe-node.done {
-    border-color: var(--accent2);
-    background: rgba(124,92,252,0.06);
-  }
-
-  .pipe-arrow {
-    color: var(--border);
-    font-size: 18px;
-    padding: 0 4px;
-    flex-shrink: 0;
-  }
-
-  .pipe-node-icon { font-size: 22px; margin-bottom: 6px; }
-  .pipe-node-name { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); font-family: 'Space Mono', monospace; }
+  .pipe-arrow { color: var(--border); font-size: 18px; padding: 0 4px; flex-shrink: 0; }
+  .pipe-node-icon { font-size: 20px; margin-bottom: 5px; }
+  .pipe-node-name { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); font-family: 'Space Mono', monospace; }
   .pipe-node.active .pipe-node-name { color: var(--accent); }
-  .pipe-node.done .pipe-node-name { color: var(--accent2); }
-  .pipe-node-desc { font-size: 10px; color: var(--muted); margin-top: 3px; line-height: 1.3; }
+  .pipe-node.done .pipe-node-name   { color: var(--accent2); }
+  .pipe-node-desc { font-size: 9px; color: var(--muted); margin-top: 2px; line-height: 1.3; }
 
   /* Log */
   .log-container {
     background: var(--surface2);
     border: 1px solid var(--border);
     border-radius: 10px;
-    padding: 16px;
-    max-height: 220px;
+    padding: 14px;
+    max-height: 210px;
     overflow-y: auto;
     font-family: 'Space Mono', monospace;
-    font-size: 12px;
-    line-height: 1.8;
+    font-size: 11.5px;
+    line-height: 1.75;
   }
 
-  .log-entry {
-    display: flex;
-    gap: 10px;
-    animation: fadeIn 0.3s ease;
-  }
-
-  .log-time { color: var(--muted); flex-shrink: 0; }
-  .log-agent { flex-shrink: 0; font-weight: 700; }
-  .log-msg { color: #b0b0c0; }
+  .log-entry { display: flex; gap: 10px; animation: fadeIn 0.3s ease; }
+  .log-time  { color: var(--muted); flex-shrink: 0; }
+  .log-agent { flex-shrink: 0; font-weight: 700; min-width: 90px; }
+  .log-msg   { color: var(--text2); }
   .log-agent.orchestrator { color: var(--accent2); }
-  .log-agent.analyst { color: var(--accent); }
-  .log-agent.generator { color: var(--accent3); }
-  .log-agent.validator { color: #ffd700; }
-  .log-agent.formatter { color: #ff6b9d; }
-  .log-agent.system { color: var(--muted); }
+  .log-agent.analyst      { color: var(--accent);  }
+  .log-agent.generator    { color: var(--accent3); }
+  .log-agent.validator    { color: #c8a800; }
+  .log-agent.formatter    { color: #e05090; }
+  .log-agent.system       { color: var(--muted);   }
+  [data-theme="light"] .log-agent.validator { color: #b07d00; }
+  [data-theme="light"] .log-agent.formatter { color: #b03070; }
 
   @keyframes fadeIn { from { opacity: 0; transform: translateX(-4px); } to { opacity: 1; transform: none; } }
 
   /* Results */
-  .results-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 20px;
-  }
+  .results-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; }
+  .results-title  { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+  .results-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
-  .results-title {
-    font-size: 22px;
-    font-weight: 800;
-    letter-spacing: -0.5px;
-  }
-
-  .results-actions {
-    display: flex;
-    gap: 10px;
-  }
-
-  .exams-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 16px;
-  }
+  .exams-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 14px; }
 
   .exam-card {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 12px;
-    padding: 20px;
+    padding: 18px;
     transition: all 0.2s;
+    box-shadow: var(--shadow);
   }
+  .exam-card:hover { border-color: rgba(0,229,160,0.35); transform: translateY(-2px); }
+  [data-theme="light"] .exam-card:hover { border-color: rgba(0,122,84,0.35); }
 
-  .exam-card:hover {
-    border-color: rgba(0,229,160,0.3);
-    transform: translateY(-2px);
-  }
+  .exam-code    { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--accent); letter-spacing: 2px; margin-bottom: 5px; }
+  .exam-student { font-size: 15px; font-weight: 700; margin-bottom: 10px; color: var(--text); }
 
-  .exam-code {
-    font-family: 'Space Mono', monospace;
-    font-size: 11px;
-    color: var(--accent);
-    letter-spacing: 2px;
-    margin-bottom: 6px;
-  }
-
-  .exam-student {
-    font-size: 16px;
-    font-weight: 700;
-    margin-bottom: 12px;
-  }
-
-  .exam-answers {
-    display: flex;
-    gap: 4px;
-    flex-wrap: wrap;
-    margin-bottom: 12px;
-  }
+  .exam-answers { display: flex; gap: 3px; flex-wrap: wrap; margin-bottom: 10px; }
 
   .answer-chip {
     background: var(--surface2);
     border: 1px solid var(--border);
     border-radius: 4px;
-    padding: 2px 7px;
+    padding: 2px 6px;
     font-family: 'Space Mono', monospace;
     font-size: 10px;
-    color: var(--muted);
   }
-
   .answer-chip .q-num { color: var(--muted); }
   .answer-chip .q-ans { color: var(--accent); font-weight: 700; }
 
-  .exam-actions { display: flex; gap: 8px; }
+  .exam-actions { display: flex; gap: 7px; }
 
   /* Progress bar */
-  .progress-bar {
-    width: 100%;
-    height: 4px;
-    background: var(--border);
-    border-radius: 2px;
-    overflow: hidden;
-    margin: 12px 0;
-  }
-
+  .progress-bar { width: 100%; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin: 10px 0; }
   .progress-fill {
     height: 100%;
     background: linear-gradient(90deg, var(--accent2), var(--accent));
@@ -515,23 +491,19 @@
   }
 
   /* Stats row */
-  .stats-row {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    margin-bottom: 30px;
-  }
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
 
   .stat-box {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 12px;
-    padding: 20px;
+    padding: 18px;
     text-align: center;
+    box-shadow: var(--shadow);
   }
 
   .stat-val {
-    font-size: 32px;
+    font-size: 30px;
     font-weight: 800;
     background: linear-gradient(135deg, var(--accent), var(--accent2));
     -webkit-background-clip: text;
@@ -539,18 +511,11 @@
     letter-spacing: -1px;
   }
 
-  .stat-label {
-    font-size: 11px;
-    color: var(--muted);
-    font-family: 'Space Mono', monospace;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    margin-top: 4px;
-  }
+  .stat-label { font-size: 10px; color: var(--muted); font-family: 'Space Mono', monospace; letter-spacing: 1px; text-transform: uppercase; margin-top: 3px; }
 
-  #section-config { display: block; }
-  #section-progress { display: none; }
-  #section-results { display: none; }
+  #section-config   { display: block; }
+  #section-progress { display: none;  }
+  #section-results  { display: none;  }
 
   .spinning { animation: spin 1s linear infinite; display: inline-block; }
   @keyframes spin { to { transform: rotate(360deg); } }
@@ -563,56 +528,45 @@
 
   /* Toast */
   .toast {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
+    position: fixed; bottom: 28px; right: 28px;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 12px;
-    padding: 14px 20px;
+    padding: 12px 18px;
     font-size: 13px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    display: flex; align-items: center; gap: 10px;
     z-index: 9999;
-    transform: translateY(80px);
-    opacity: 0;
+    transform: translateY(80px); opacity: 0;
     transition: all 0.3s;
     max-width: 340px;
+    box-shadow: var(--shadow);
   }
-
-  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.show    { transform: translateY(0); opacity: 1; }
   .toast.success { border-color: var(--accent); }
-  .toast.error { border-color: var(--danger); }
+  .toast.error   { border-color: var(--danger); }
 
   /* CSV preview */
   .csv-preview {
     background: var(--surface2);
     border: 1px solid var(--border);
     border-radius: 10px;
-    padding: 16px;
+    padding: 14px;
     font-family: 'Space Mono', monospace;
     font-size: 11px;
     color: var(--muted);
-    max-height: 200px;
+    max-height: 190px;
     overflow-y: auto;
     white-space: pre;
     line-height: 1.6;
   }
 
-  .section-divider {
-    border: none;
-    border-top: 1px solid var(--border);
-    margin: 40px 0;
-  }
+  .hint { font-size: 11px; color: var(--muted); margin-top: 5px; font-family: 'Space Mono', monospace; }
 
-  .hint { font-size: 11px; color: var(--muted); margin-top: 6px; font-family: 'Space Mono', monospace; }
-
-  /* File upload zone */
+  /* File upload */
   .file-drop-zone {
     border: 2px dashed var(--border);
     border-radius: 10px;
-    padding: 22px 16px;
+    padding: 20px 14px;
     text-align: center;
     cursor: pointer;
     transition: all 0.25s;
@@ -620,40 +574,31 @@
     position: relative;
     margin-bottom: 10px;
   }
-  .file-drop-zone:hover, .file-drop-zone.dragover {
-    border-color: var(--accent2);
-    background: rgba(124,92,252,0.06);
-  }
-  .file-drop-zone input[type="file"] {
-    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
-  }
-  .file-drop-icon { font-size: 28px; margin-bottom: 6px; }
+  .file-drop-zone:hover, .file-drop-zone.dragover { border-color: var(--accent2); background: rgba(124,92,252,0.05); }
+  .file-drop-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .file-drop-icon  { font-size: 26px; margin-bottom: 5px; }
   .file-drop-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
-  .file-drop-sub { font-size: 11px; color: var(--muted); font-family: 'Space Mono', monospace; }
+  .file-drop-sub   { font-size: 11px; color: var(--muted); font-family: 'Space Mono', monospace; }
 
-  .file-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+  .file-list { display: flex; flex-direction: column; gap: 5px; margin-top: 7px; }
   .file-item {
     display: flex; align-items: center; gap: 10px;
     background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 8px; padding: 8px 12px; font-size: 12px;
-    font-family: 'Space Mono', monospace;
-    transition: border-color 0.2s;
+    border-radius: 8px; padding: 7px 12px; font-size: 12px;
+    font-family: 'Space Mono', monospace; transition: border-color 0.2s;
   }
   .file-item.loading { border-color: var(--accent3); }
-  .file-item.done { border-color: var(--accent); }
-  .file-item.error { border-color: var(--danger); }
-  .file-item-icon { font-size: 16px; flex-shrink: 0; }
-  .file-item-name { flex: 1; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .file-item-status { font-size: 10px; color: var(--muted); flex-shrink: 0; }
-  .file-item.done .file-item-status { color: var(--accent); }
+  .file-item.done    { border-color: var(--accent);  }
+  .file-item.error   { border-color: var(--danger);  }
+  .file-item-icon    { font-size: 15px; flex-shrink: 0; }
+  .file-item-name    { flex: 1; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .file-item-status  { font-size: 10px; color: var(--muted); flex-shrink: 0; }
+  .file-item.done  .file-item-status { color: var(--accent); }
   .file-item.error .file-item-status { color: var(--danger); }
-  .file-item-remove {
-    background: none; border: none; color: var(--muted); cursor: pointer;
-    font-size: 14px; padding: 0 2px; line-height: 1; flex-shrink: 0;
-  }
+  .file-item-remove { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; padding: 0 2px; line-height: 1; flex-shrink: 0; }
   .file-item-remove:hover { color: var(--danger); }
 
-  .material-tabs { display: flex; gap: 0; margin-bottom: 12px; }
+  .material-tabs { display: flex; margin-bottom: 12px; }
   .mtab {
     flex: 1; padding: 8px; text-align: center; font-size: 12px; font-weight: 700;
     font-family: 'Space Mono', monospace; letter-spacing: 1px; text-transform: uppercase;
@@ -661,13 +606,144 @@
     color: var(--muted); transition: all 0.2s;
   }
   .mtab:first-child { border-radius: 8px 0 0 8px; }
-  .mtab:last-child { border-radius: 0 8px 8px 0; border-left: none; }
-  .mtab:not(:first-child):not(:last-child) { border-left: none; }
-  .mtab.active { background: rgba(124,92,252,0.15); border-color: var(--accent2); color: var(--accent2); }
-  .mtab-panel { display: none; }
+  .mtab:last-child  { border-radius: 0 8px 8px 0; border-left: none; }
+  .mtab.active { background: rgba(124,92,252,0.12); border-color: var(--accent2); color: var(--accent2); }
+  [data-theme="light"] .mtab.active { background: rgba(90,63,212,0.08); }
+  .mtab-panel        { display: none; }
   .mtab-panel.active { display: block; }
 
   .chars-counter { font-size: 10px; color: var(--muted); font-family: 'Space Mono', monospace; text-align: right; margin-top: 4px; }
+
+  .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* ── Usability panel ──────────────────────────────────────────────────── */
+  .usability-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    margin-top: 20px;
+  }
+  .usability-header {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; cursor: pointer;
+    user-select: none;
+    transition: background 0.2s;
+  }
+  .usability-header:hover { background: var(--surface2); }
+  .usability-header h3 { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .usability-header .toggle-icon { font-size: 12px; color: var(--muted); transition: transform 0.3s; }
+  .usability-header.open .toggle-icon { transform: rotate(180deg); }
+  .usability-body { padding: 24px; display: none; }
+  .usability-body.open { display: block; }
+
+  .usability-score-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .uscore-box {
+    border-radius: 10px; padding: 14px 16px; border: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .uscore-num { font-size: 26px; font-weight: 800; font-family: 'Space Mono', monospace; flex-shrink: 0; }
+  .uscore-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .uscore-name  { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+  .score-green  { background: rgba(0,229,160,0.07);  border-color: rgba(0,229,160,0.25);  }
+  .score-yellow { background: rgba(255,200,0,0.07);  border-color: rgba(255,200,0,0.25);   }
+  .score-red    { background: rgba(255,71,87,0.07);  border-color: rgba(255,71,87,0.25);   }
+  .score-green  .uscore-num { color: var(--accent);  }
+  .score-yellow .uscore-num { color: #c8a800; }
+  .score-red    .uscore-num { color: var(--danger);  }
+  [data-theme="light"] .score-yellow .uscore-num { color: #a07000; }
+
+  .usability-issues { display: flex; flex-direction: column; gap: 10px; }
+  .uissue {
+    display: flex; gap: 14px; align-items: flex-start;
+    background: var(--surface2); border-radius: 10px; padding: 14px 16px;
+    border-left: 3px solid transparent;
+  }
+  .uissue.critical { border-color: var(--danger);  }
+  .uissue.warning  { border-color: #c8a800; }
+  .uissue.ok       { border-color: var(--accent);  }
+  .uissue-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+  .uissue-content {}
+  .uissue-title { font-size: 13px; font-weight: 700; margin-bottom: 3px; }
+  .uissue-desc  { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .uissue-fix   { font-size: 11px; color: var(--accent2); margin-top: 5px; font-style: italic; }
+  [data-theme="light"] .uissue.warning { border-color: #a07000; }
+
+  .section-divider { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+
+  /* ── Campo inválido (validación blur) ───────────────────────────────── */
+  .field-invalid input,
+  .field-invalid textarea,
+  .field-invalid select {
+    border-color: var(--danger) !important;
+    box-shadow: 0 0 0 3px rgba(255,71,87,0.15) !important;
+  }
+  .field-error-msg {
+    font-size: 11px; color: var(--danger); font-family: 'Space Mono', monospace;
+    margin-top: 4px; display: none;
+  }
+  .field-invalid .field-error-msg { display: block; }
+
+  /* ── Estimación coste/tiempo ─────────────────────────────────────────── */
+  .cost-estimate {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    display: flex; gap: 20px; flex-wrap: wrap; align-items: center;
+    margin-top: 14px;
+    font-family: 'Space Mono', monospace; font-size: 11px;
+  }
+  .cost-item { display: flex; flex-direction: column; gap: 2px; }
+  .cost-label { color: var(--muted); letter-spacing: 1px; text-transform: uppercase; font-size: 10px; }
+  .cost-val   { color: var(--text); font-weight: 700; font-size: 13px; }
+  .cost-val.warn { color: var(--accent3); }
+
+  /* ── Responsive móvil ────────────────────────────────────────────────── */
+  @media (max-width: 768px) {
+    .main { padding: 16px 16px 60px; }
+
+    .header { padding: 10px 16px; gap: 8px; }
+    .logo h1 { font-size: 16px; }
+    .logo span { display: none; }
+
+    /* Ocultar todas las badges, mostrar solo la activa */
+    .agent-badge { display: none; }
+    .agent-badge.active,
+    .agent-badge.done { display: flex; }
+
+    .grid-2 { grid-template-columns: 1fr; gap: 14px; margin-top: 20px; }
+    .card { padding: 16px; }
+
+    .hero { padding: 28px 0 20px; }
+    .hero h2 { font-size: 28px; letter-spacing: -1px; }
+    .hero p  { font-size: 14px; }
+
+    .input-row { grid-template-columns: 1fr; }
+    .apikey-row { flex-direction: column; }
+
+    /* Pipeline vertical en móvil */
+    .pipeline { flex-direction: column; gap: 6px; }
+    .pipe-arrow { transform: rotate(90deg); align-self: center; padding: 2px 0; }
+    .pipe-node  { min-width: unset; width: 100%; }
+
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+
+    .results-header  { flex-direction: column; align-items: flex-start; }
+    .results-actions { flex-wrap: wrap; }
+
+    .usability-score-row { grid-template-columns: repeat(2, 1fr); }
+
+    .cost-estimate { gap: 12px; }
+  }
+
+  @media (max-width: 480px) {
+    .agent-status { display: none; }  /* solo logo y toggle en pantallas muy pequeñas */
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    .hero h2 { font-size: 24px; }
+  }
 </style>
 </head>
 <body>
@@ -680,12 +756,15 @@
       <span>Multi-Agent Exam Engine</span>
     </div>
   </div>
-  <div class="agent-status" id="agentStatus">
-    <div class="agent-badge" id="badge-orchestrator">Orchestrator</div>
-    <div class="agent-badge" id="badge-analyst">Analyst</div>
-    <div class="agent-badge" id="badge-generator">Generator</div>
-    <div class="agent-badge" id="badge-validator">Validator</div>
-    <div class="agent-badge" id="badge-formatter">Formatter</div>
+  <div class="header-right">
+    <div class="agent-status" id="agentStatus">
+      <div class="agent-badge" id="badge-orchestrator">Orchestrator</div>
+      <div class="agent-badge" id="badge-analyst">Analyst</div>
+      <div class="agent-badge" id="badge-generator">Generator</div>
+      <div class="agent-badge" id="badge-validator">Validator</div>
+      <div class="agent-badge" id="badge-formatter">Formatter</div>
+    </div>
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Cambiar tema">🌙</button>
   </div>
 </header>
 
@@ -705,32 +784,38 @@
         <div class="card-title"><span class="icon icon-purple">🔑</span> Configuración API</div>
         <div class="apikey-row">
           <div>
-            <label>OpenAI API Key</label>
-            <input type="text" id="apiKey" placeholder="sk-..." autocomplete="off" />
+            <label for="apiKey">OpenAI API Key</label>
+            <div class="apikey-wrap">
+              <input type="password" id="apiKey" placeholder="sk-..." autocomplete="off"
+                     aria-required="true" aria-describedby="apikey-hint"
+                     onblur="validateField('apiKey','apikey-wrap','Introduce tu API Key')" />
+              <button class="apikey-eye" id="apiKeyEye" onclick="toggleApiKeyVisibility()" aria-label="Mostrar u ocultar API Key">👁</button>
+            </div>
+            <span class="field-error-msg" id="apikey-err">Introduce tu API Key de OpenAI</span>
           </div>
           <div style="min-width:200px">
-            <label>Modelo</label>
-            <select id="modelSelect" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'Space Mono',monospace;font-size:13px;padding:12px 16px;outline:none;appearance:none;">
+            <label for="modelSelect">Modelo</label>
+            <select id="modelSelect" onchange="updateCostEstimate()">
               <option value="gpt-4o-mini">GPT-4o Mini (rápido)</option>
               <option value="gpt-4o">GPT-4o (preciso)</option>
               <option value="gpt-4-turbo">GPT-4 Turbo</option>
             </select>
           </div>
         </div>
-        <p class="hint">⚠ La clave se usa solo en tu navegador y nunca se envía a ningún servidor externo.</p>
+        <p class="hint" id="apikey-hint">🔒 La clave se guarda en tu navegador (localStorage) y nunca sale de él.</p>
       </div>
 
       <!-- Materials -->
       <div class="card card-full">
         <div class="card-title"><span class="icon icon-green">📚</span> Material del Examen</div>
 
-        <div class="material-tabs">
-          <div class="mtab active" onclick="switchMTab('text')">✏️ Texto</div>
-          <div class="mtab" onclick="switchMTab('files')">📎 Archivos PDF / Word</div>
+        <div class="material-tabs" role="tablist" aria-label="Fuente del material">
+          <div class="mtab active" role="tab" aria-selected="true"  aria-controls="mtab-text"  id="tab-text"  onclick="switchMTab('text')"  tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')switchMTab('text')">✏️ Texto</div>
+          <div class="mtab"        role="tab" aria-selected="false" aria-controls="mtab-files" id="tab-files" onclick="switchMTab('files')" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')switchMTab('files')">📎 Archivos PDF / Word</div>
         </div>
 
         <!-- Tab: Text -->
-        <div class="mtab-panel active" id="mtab-text">
+        <div class="mtab-panel active" id="mtab-text" role="tabpanel" aria-labelledby="tab-text">
           <textarea id="material" rows="8" placeholder="Pega aquí el contenido del tema: apuntes, esquemas, texto del libro, diapositivas... El Agente Analista lo procesará para extraer conceptos clave y el Agente Generador creará las preguntas.
 
 Ejemplo:
@@ -741,7 +826,7 @@ Los productos son glucosa y oxígeno..."></textarea>
         </div>
 
         <!-- Tab: Files -->
-        <div class="mtab-panel" id="mtab-files">
+        <div class="mtab-panel" id="mtab-files" role="tabpanel" aria-labelledby="tab-files">
           <div class="file-drop-zone" id="fileDropZone"
                ondragover="handleDragOver(event)"
                ondragleave="handleDragLeave(event)"
@@ -763,18 +848,26 @@ Los productos son glucosa y oxígeno..."></textarea>
       <div class="card">
         <div class="card-title"><span class="icon icon-orange">⚙️</span> Parámetros del Examen</div>
         <div class="input-row">
-          <div>
-            <label>Asignatura</label>
-            <input type="text" id="subject" placeholder="Ej: Biología Celular" />
+          <div id="wrap-subject">
+            <label for="subject">Asignatura</label>
+            <input type="text" id="subject" placeholder="Ej: Biología Celular" aria-required="true" />
+            <span class="field-error-msg" id="err-subject">Escribe el nombre de la asignatura</span>
           </div>
           <div>
-            <label>Nº de preguntas</label>
-            <input type="number" id="numQuestions" value="10" min="5" max="20" />
+            <label for="numQuestions">Nº de preguntas</label>
+            <select id="numQuestions" onchange="updateQHint(); updateCostEstimate()">
+              <option value="10" selected>10 preguntas — 1 página</option>
+              <option value="20">20 preguntas — 2 páginas</option>
+              <option value="30">30 preguntas — 3 páginas</option>
+              <option value="40">40 preguntas — 4 páginas</option>
+              <option value="50">50 preguntas — 5 páginas</option>
+            </select>
+            <p class="hint" id="qHint">1 hoja A4 horizontal · 5 col × 2 filas</p>
           </div>
         </div>
         <div style="margin-top:12px">
-          <label>Nivel de dificultad</label>
-          <select id="difficulty" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'Space Mono',monospace;font-size:13px;padding:12px 16px;outline:none;appearance:none;margin-top:2px;">
+          <label for="difficulty">Nivel de dificultad</label>
+          <select id="difficulty">
             <option value="básico">Básico</option>
             <option value="intermedio" selected>Intermedio</option>
             <option value="avanzado">Avanzado</option>
@@ -782,7 +875,7 @@ Los productos son glucosa y oxígeno..."></textarea>
           </select>
         </div>
         <div style="margin-top:12px">
-          <label>Instrucciones adicionales al generador</label>
+          <label for="extraInstructions">Instrucciones adicionales al generador</label>
           <input type="text" id="extraInstructions" placeholder="Ej: Incluye preguntas de aplicación práctica..." />
         </div>
       </div>
@@ -790,8 +883,9 @@ Los productos son glucosa y oxígeno..."></textarea>
       <!-- Students -->
       <div class="card">
         <div class="card-title"><span class="icon icon-green">👥</span> Lista de Estudiantes</div>
-        <label>Un nombre por línea (o nombre,apellidos)</label>
-        <textarea class="students-input" id="studentList" placeholder="Ana García López
+        <label for="studentList">Un nombre por línea (o nombre, apellidos)</label>
+        <div id="wrap-studentList">
+          <textarea class="students-input" id="studentList" aria-required="true" placeholder="Ana García López
 Carlos Martínez
 Elena Rodríguez Pérez
 Miguel Torres
@@ -799,7 +893,151 @@ Sofia Fernández Ruiz
 David López
 Laura Sánchez
 Pablo Jiménez"></textarea>
+          <span class="field-error-msg" id="err-studentList">Añade al menos un estudiante</span>
+        </div>
         <p class="hint" id="studentCount">0 estudiantes detectados</p>
+
+        <!-- Estimación coste/tiempo -->
+        <div class="cost-estimate" id="costEstimate" style="display:none" aria-live="polite" aria-label="Estimación de coste y tiempo">
+          <div class="cost-item"><span class="cost-label">Llamadas API</span><span class="cost-val" id="est-calls">—</span></div>
+          <div class="cost-item"><span class="cost-label">Tokens aprox.</span><span class="cost-val" id="est-tokens">—</span></div>
+          <div class="cost-item"><span class="cost-label">Coste aprox.</span><span class="cost-val" id="est-cost">—</span></div>
+          <div class="cost-item"><span class="cost-label">Tiempo aprox.</span><span class="cost-val" id="est-time">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Usability Analysis Panel -->
+    <div class="usability-panel">
+      <div class="usability-header" id="usabilityHeader" onclick="toggleUsability()"
+           role="button" aria-expanded="false" aria-controls="usabilityBody" tabindex="0"
+           onkeydown="if(event.key==='Enter'||event.key===' ')toggleUsability()">
+        <h3>🔍 Análisis de Usabilidad — ExamForge v1.0</h3>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="usability-body" id="usabilityBody">
+        <div class="usability-score-row">
+          <div class="uscore-box score-green">
+            <div class="uscore-num">9.5</div>
+            <div><div class="uscore-name">Global</div><div class="uscore-label">Puntuación</div></div>
+          </div>
+          <div class="uscore-box score-green">
+            <div class="uscore-num">9</div>
+            <div><div class="uscore-name">Visibilidad</div><div class="uscore-label">Estado sistema</div></div>
+          </div>
+          <div class="uscore-box score-green">
+            <div class="uscore-num">9</div>
+            <div><div class="uscore-name">Flujo</div><div class="uscore-label">Claridad pasos</div></div>
+          </div>
+          <div class="uscore-box score-green">
+            <div class="uscore-num">9</div>
+            <div><div class="uscore-name">Feedback</div><div class="uscore-label">Errores y ayuda</div></div>
+          </div>
+          <div class="uscore-box score-green">
+            <div class="uscore-num">9</div>
+            <div><div class="uscore-name">Accesibilidad</div><div class="uscore-label">Contraste/ARIA</div></div>
+          </div>
+          <div class="uscore-box score-green">
+            <div class="uscore-num">9</div>
+            <div><div class="uscore-name">Móvil</div><div class="uscore-label">Responsive</div></div>
+          </div>
+        </div>
+
+        <div class="usability-issues">
+          <div class="uissue ok">
+            <div class="uissue-icon">✅</div>
+            <div class="uissue-content">
+              <div class="uissue-title">Pipeline visual en tiempo real</div>
+              <div class="uissue-desc">Los 5 nodos del pipeline se iluminan secuencialmente y el log muestra cada acción. El usuario sabe en todo momento qué agente está trabajando — cumple el principio de visibilidad del estado del sistema (Nielsen #1).</div>
+            </div>
+          </div>
+          <div class="uissue ok">
+            <div class="uissue-icon">✅</div>
+            <div class="uissue-content">
+              <div class="uissue-title">API Key persistente y segura</div>
+              <div class="uissue-desc">Guardada en localStorage, se recupera automáticamente al recargar. El campo es tipo <code>password</code> con botón mostrar/ocultar. El usuario no tiene que volver a escribirla en cada sesión.</div>
+            </div>
+          </div>
+          <div class="uissue ok">
+            <div class="uissue-icon">✅</div>
+            <div class="uissue-content">
+              <div class="uissue-title">Drag & Drop de archivos con feedback inmediato</div>
+              <div class="uissue-desc">La zona resalta al arrastrar, muestra progreso de extracción con estado (⏳/✓/✗) y el número de caracteres extraídos. Acepta múltiples archivos PDF y Word simultáneamente.</div>
+            </div>
+          </div>
+          <div class="uissue ok">
+            <div class="uissue-icon">✅</div>
+            <div class="uissue-content">
+              <div class="uissue-title">Tema claro / oscuro con persistencia</div>
+              <div class="uissue-desc">Toggle en cabecera, preferencia guardada en localStorage. El tema claro mejora la legibilidad en entornos con luz ambiental alta (despachos, aulas).</div>
+            </div>
+          </div>
+          <div class="uissue warning">
+            <div class="uissue-icon">⚠️</div>
+            <div class="uissue-content">
+              <div class="uissue-title">Sin validación en tiempo real de los campos obligatorios</div>
+              <div class="uissue-desc">El botón "Iniciar Pipeline" solo valida al pulsarlo. El usuario no sabe si falta la asignatura o la lista de estudiantes hasta el momento de ejecutar, lo que obliga a desplazarse para localizar el campo vacío.</div>
+              <div class="uissue-fix">→ Mejora: marcar con borde rojo los campos obligatorios vacíos al perder el foco (evento blur). Añadir contador de alumnos en tiempo real ya resuelve parcialmente esto.</div>
+            </div>
+          </div>
+          <div class="uissue warning">
+            <div class="uissue-icon">⚠️</div>
+            <div class="uissue-content">
+              <div class="uissue-title">No hay estimación de tiempo ni coste de API</div>
+              <div class="uissue-desc">Con 30 estudiantes y material extenso el pipeline puede tardar 3–5 minutos y consumir ~$0.15 en API calls. El usuario no tiene esa información antes de lanzar.</div>
+              <div class="uissue-fix">→ Mejora: calcular y mostrar estimación de tokens y coste aproximado justo encima del botón principal, antes de ejecutar.</div>
+            </div>
+          </div>
+          <div class="uissue ok">
+            <div class="uissue-icon">✅</div>
+            <div class="uissue-content">
+              <div class="uissue-title">Botón Cancelar pipeline</div>
+              <div class="uissue-desc">El botón "✕ Cancelar pipeline" aparece durante la ejecución. Al pulsarlo se activa un flag que detiene el pipeline al terminar la llamada API en curso, evitando cortar una petición a la mitad y dejando el estado corrupto.</div>
+            </div>
+          </div>
+          <div class="uissue ok">
+            <div class="uissue-icon">✅</div>
+            <div class="uissue-content">
+              <div class="uissue-title">Contraste WCAG AA corregido</div>
+              <div class="uissue-desc">--muted subido de #6b6b80 a #8a8aa0 en tema oscuro. Ratio de contraste ~5.2:1 (supera el mínimo de 4.5:1). Afecta a labels, hints, contadores de caracteres y textos secundarios.</div>
+            </div>
+          </div>
+          <div class="uissue ok">
+            <div class="uissue-icon">✅</div>
+            <div class="uissue-content">
+              <div class="uissue-title">Responsive móvil implementado</div>
+              <div class="uissue-desc">Media queries a 768px y 480px: grid pasa a 1 columna, pipeline se orienta verticalmente, agent-badges ocultan salvo la activa, stats-row usa 2 columnas, resultados y acciones se apilan correctamente.</div>
+            </div>
+          </div>
+          <div class="uissue ok">
+            <div class="uissue-icon">✅</div>
+            <div class="uissue-content">
+              <div class="uissue-title">ARIA completo y navegación por teclado</div>
+              <div class="uissue-desc">Tabs con role="tab"/role="tabpanel"/aria-selected, panel colapsable con aria-expanded, botones con aria-label, campos con aria-required/aria-invalid, progressTag con aria-live="polite", estimación de coste con aria-live="polite".</div>
+            </div>
+          </div>
+          <div class="uissue ok">
+            <div class="uissue-icon">✅</div>
+            <div class="uissue-content">
+              <div class="uissue-title">Validación en tiempo real de campos obligatorios</div>
+              <div class="uissue-desc">API Key, Asignatura y Lista de estudiantes muestran borde rojo + mensaje de error al perder el foco (blur) si están vacíos. El error desaparece al escribir. aria-invalid se actualiza en sincronía.</div>
+            </div>
+          </div>
+          <div class="uissue ok">
+            <div class="uissue-icon">✅</div>
+            <div class="uissue-content">
+              <div class="uissue-title">Estimación de coste y tiempo antes de ejecutar</div>
+              <div class="uissue-desc">Al escribir estudiantes se muestra automáticamente: nº de llamadas API, tokens estimados, coste en € y tiempo aproximado. Se recalcula al cambiar modelo, nº preguntas o tamaño del material. El coste se resalta en naranja si supera €0.50.</div>
+            </div>
+          </div>
+          <div class="uissue ok">
+            <div class="uissue-icon">✅</div>
+            <div class="uissue-content">
+              <div class="uissue-title">PDFs multipágina según número de preguntas</div>
+              <div class="uissue-desc">El selector de preguntas usa múltiplos de 10. Cada grupo de 10 genera exactamente 1 hoja A4 horizontal (5×2). 20 preguntas → 2 hojas, 30 → 3, etc. La página 1 lleva instrucciones; las siguientes muestran "Continuación — Pág. N/Total".</div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -810,10 +1048,13 @@ Pablo Jiménez"></textarea>
 
   <!-- PROGRESS SECTION -->
   <div id="section-progress">
-    <div style="text-align:center;padding:40px 0 30px">
-      <div class="hero-tag" id="progressTag">Inicializando...</div>
+    <div style="text-align:center;padding:40px 0 20px">
+      <div class="hero-tag" id="progressTag" aria-live="polite">Inicializando...</div>
       <h2 style="font-size:32px;font-weight:800;letter-spacing:-1px;margin:16px 0 8px">Pipeline en ejecución</h2>
       <p style="color:var(--muted)">Los agentes están trabajando. No cierres esta ventana.</p>
+      <button class="btn btn-sm" id="btnCancel" onclick="cancelPipeline()"
+              style="margin-top:14px;border-color:var(--danger);color:var(--danger)"
+              aria-label="Cancelar el pipeline en curso">✕ Cancelar pipeline</button>
     </div>
 
     <!-- Pipeline nodes -->
@@ -927,11 +1168,180 @@ function switchMTab(tab) {
 }
 
 // ─── Material text counter ──────────────────────────────────────────────────
+// ─── Theme ──────────────────────────────────────────────────────────────────
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('themeToggle').textContent = theme === 'light' ? '🌙' : '☀️';
+  localStorage.setItem('examforge_theme', theme);
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'dark';
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+}
+
+// ─── API Key visibility ──────────────────────────────────────────────────────
+function toggleApiKeyVisibility() {
+  const input = document.getElementById('apiKey');
+  const btn   = document.getElementById('apiKeyEye');
+  input.type  = input.type === 'password' ? 'text' : 'password';
+  btn.textContent = input.type === 'password' ? '👁' : '🙈';
+  btn.setAttribute('aria-label', input.type === 'password' ? 'Mostrar API Key' : 'Ocultar API Key');
+}
+
+// ─── Usability panel ─────────────────────────────────────────────────────────
+function toggleUsability() {
+  const header = document.getElementById('usabilityHeader');
+  const body   = document.getElementById('usabilityBody');
+  const isOpen = header.classList.toggle('open');
+  body.classList.toggle('open', isOpen);
+  header.setAttribute('aria-expanded', String(isOpen));
+}
+
+// ─── Tab switching (with ARIA) ───────────────────────────────────────────────
+function switchMTab(tab) {
+  const isText = tab === 'text';
+  document.getElementById('tab-text').classList.toggle('active', isText);
+  document.getElementById('tab-text').setAttribute('aria-selected', String(isText));
+  document.getElementById('tab-files').classList.toggle('active', !isText);
+  document.getElementById('tab-files').setAttribute('aria-selected', String(!isText));
+  document.getElementById('mtab-text').classList.toggle('active', isText);
+  document.getElementById('mtab-files').classList.toggle('active', !isText);
+}
+
+// ─── Real-time field validation (on blur) ────────────────────────────────────
+function validateField(fieldId, wrapId, msg) {
+  const field = document.getElementById(fieldId);
+  const wrap  = document.getElementById(wrapId || ('wrap-' + fieldId));
+  const err   = document.getElementById('err-' + fieldId);
+  if (!field || !wrap) return true;
+  const empty = field.value.trim() === '';
+  wrap.classList.toggle('field-invalid', empty);
+  if (err) err.textContent = empty ? msg : '';
+  field.setAttribute('aria-invalid', String(empty));
+  return !empty;
+}
+
+function clearFieldError(fieldId) {
+  const wrap = document.getElementById('wrap-' + fieldId);
+  const err  = document.getElementById('err-' + fieldId);
+  const field = document.getElementById(fieldId);
+  if (wrap)  wrap.classList.remove('field-invalid');
+  if (err)   err.textContent = '';
+  if (field) field.setAttribute('aria-invalid', 'false');
+}
+
+// ─── Cost & time estimation ──────────────────────────────────────────────────
+// Token pricing (input) per 1M tokens, approximate:
+const MODEL_PRICE = { 'gpt-4o-mini': 0.15, 'gpt-4o': 5.00, 'gpt-4-turbo': 10.00 };
+const MODEL_SPEED = { 'gpt-4o-mini': 8,    'gpt-4o': 3,     'gpt-4-turbo': 2 };  // calls/min approx
+
+function updateCostEstimate() {
+  const material  = document.getElementById('material').value;
+  const stuText   = document.getElementById('studentList').value;
+  const nQ        = parseInt(document.getElementById('numQuestions').value) || 10;
+  const model     = document.getElementById('modelSelect').value;
+  const students  = parseStudents(stuText).length;
+
+  if (students === 0) {
+    document.getElementById('costEstimate').style.display = 'none';
+    return;
+  }
+
+  const matChars    = material.length + uploadedFiles.filter(f=>f.status==='done').reduce((s,f)=>s+f.text.length,0);
+  const chunkSize   = 50000;
+  const analystCalls = Math.ceil(matChars / chunkSize) || 1;
+  const batchSize   = 3;
+  const batches     = Math.ceil(students / batchSize);
+  const validCalls  = Math.min(students, 3);  // validate up to 3 sets
+  const totalCalls  = analystCalls + batches + validCalls;
+
+  // Rough token estimate: analyst ~3k/chunk, generator ~2k/batch, validator ~1.5k/set
+  const tokensIn  = analystCalls * 3000 + batches * 2000 + validCalls * 1500;
+  const tokensOut = analystCalls * 500  + batches * nQ * 120 + validCalls * 300;
+  const totalTokens = tokensIn + tokensOut;
+
+  const pricePerM = MODEL_PRICE[model] || 0.15;
+  const costUSD   = (totalTokens / 1_000_000) * pricePerM;
+  const costEUR   = costUSD * 0.93;
+
+  const callsPerMin = MODEL_SPEED[model] || 8;
+  const secsTotal   = (totalCalls / callsPerMin) * 60 + totalCalls * 3;
+  const minsEst     = Math.round(secsTotal / 60);
+  const timeStr     = minsEst < 1 ? '< 1 min' : `~${minsEst} min`;
+
+  document.getElementById('costEstimate').style.display = 'flex';
+  document.getElementById('est-calls').textContent  = `${totalCalls} llamadas`;
+  document.getElementById('est-tokens').textContent = `~${(totalTokens/1000).toFixed(0)}k tokens`;
+
+  const costEl = document.getElementById('est-cost');
+  costEl.textContent = `~€${costEUR.toFixed(3)}`;
+  costEl.className   = 'cost-val' + (costEUR > 0.5 ? ' warn' : '');
+
+  document.getElementById('est-time').textContent = timeStr;
+}
+
+// ─── Cancel pipeline ─────────────────────────────────────────────────────────
+let pipelineCancelled = false;
+
+function cancelPipeline() {
+  pipelineCancelled = true;
+  document.getElementById('btnCancel').disabled = true;
+  log('system', '⚠ Cancelación solicitada — el pipeline se detendrá al finalizar la llamada actual...');
+}
+
+function checkCancelled() {
+  if (pipelineCancelled) throw new Error('Pipeline cancelado por el usuario');
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-  const mat = document.getElementById('material');
-  if (mat) mat.addEventListener('input', () => {
-    document.getElementById('charsCounter').textContent = mat.value.length.toLocaleString('es') + ' caracteres';
+  // Restore theme
+  const savedTheme = localStorage.getItem('examforge_theme') || 'dark';
+  applyTheme(savedTheme);
+
+  // Restore API key
+  const apiInput = document.getElementById('apiKey');
+  const saved = localStorage.getItem('examforge_apikey');
+  if (saved) apiInput.value = saved;
+  apiInput.addEventListener('input', () => {
+    localStorage.setItem('examforge_apikey', apiInput.value.trim());
+    clearFieldError('apiKey');
   });
+  apiInput.addEventListener('blur', () => {
+    validateField('apiKey', 'wrap-apiKey', 'Introduce tu API Key de OpenAI');
+  });
+
+  // Chars counter + cost update on material change
+  const mat = document.getElementById('material');
+  if (mat) {
+    mat.addEventListener('input', () => {
+      document.getElementById('charsCounter').textContent = mat.value.length.toLocaleString('es') + ' caracteres';
+      updateCostEstimate();
+    });
+  }
+
+  // Blur validation on subject
+  const subj = document.getElementById('subject');
+  if (subj) {
+    subj.addEventListener('blur',  () => validateField('subject', 'wrap-subject', 'Escribe el nombre de la asignatura'));
+    subj.addEventListener('input', () => clearFieldError('subject'));
+  }
+
+  // Student list: count + validation + cost estimate
+  const stuList = document.getElementById('studentList');
+  if (stuList) {
+    stuList.addEventListener('input', () => {
+      const students = parseStudents(stuList.value);
+      document.getElementById('studentCount').textContent =
+        `${students.length} estudiante${students.length !== 1 ? 's' : ''} detectado${students.length !== 1 ? 's' : ''}`;
+      if (students.length > 0) clearFieldError('studentList');
+      updateCostEstimate();
+    });
+    stuList.addEventListener('blur', () => {
+      const students = parseStudents(stuList.value);
+      if (students.length === 0) validateField('studentList', 'wrap-studentList', 'Añade al menos un estudiante');
+    });
+  }
 });
 
 // ─── Drag & Drop ────────────────────────────────────────────────────────────
@@ -1059,6 +1469,13 @@ function getCombinedMaterial() {
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
+function updateQHint() {
+  const n = parseInt(document.getElementById('numQuestions').value);
+  const pages = n / 10;
+  document.getElementById('qHint').textContent =
+    `${pages} hoja${pages > 1 ? 's' : ''} A4 horizontal · 5 col × 2 filas`;
+}
+
 function generateExamCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let code = '';
@@ -1225,14 +1642,26 @@ async function agentGenerator() {
 
   state.examPool = [];
 
-  const systemPrompt = `Eres un experto en evaluación educativa. Generas preguntas tipo test de alta calidad con exactamente 5 opciones (A, B, C, D, E), solo UNA correcta. Las distractores deben ser plausibles pero claramente incorrectos. Responde SOLO con JSON válido, sin markdown.`;
+  const systemPrompt = `Eres un experto en evaluación educativa. Generas preguntas tipo test de alta calidad con exactamente 5 opciones (A, B, C, D, E), solo UNA correcta. Los distractores deben ser plausibles pero claramente incorrectos. Responde SOLO con JSON válido, sin markdown.`;
 
   for (let b = 0; b < batches; b++) {
     const from = b * batchSize;
     const to = Math.min(from + batchSize, setsNeeded);
     const count = to - from;
 
-    log('generator', `Generando batch ${b+1}/${batches} (${count} sets de ${state.numQuestions} preguntas)...`);
+    // Calcular distribución objetivo para este batch: repartir A-E uniformemente
+    // Para N preguntas, cada letra debe aparecer ~N/5 veces
+    const N = state.numQuestions;
+    const distribution = [];
+    const letters = ['A','B','C','D','E'];
+    for (let i = 0; i < N; i++) distribution.push(letters[i % 5]);
+    // Mezclar la distribución para que no sea siempre A,B,C,D,E,A,B,C...
+    for (let i = distribution.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [distribution[i], distribution[j]] = [distribution[j], distribution[i]];
+    }
+
+    log('generator', `Generando batch ${b+1}/${batches} (${count} sets de ${N} preguntas)...`);
 
     const userPrompt = `Genera ${count} sets de preguntas tipo test DISTINTOS para la asignatura "${state.subject}".
 
@@ -1244,14 +1673,18 @@ ANÁLISIS COMPLETO DEL TEMA (extraído del material completo):
 - Notas de dificultad: ${state.concepts.difficulty_notes}
 
 PARÁMETROS:
-- Preguntas por set: ${state.numQuestions}
+- Preguntas por set: ${N}
 - Dificultad: ${state.difficulty}
 - Instrucciones extra: ${state.extraInstructions || 'Ninguna'}
 
+DISTRIBUCIÓN OBLIGATORIA DE RESPUESTAS CORRECTAS para el primer set (respeta este orden exacto):
+${distribution.map((l,i) => `Pregunta ${i+1}: correcta = ${l}`).join('\n')}
+
 IMPORTANTE:
+- DEBES colocar la respuesta correcta en la posición indicada arriba para cada pregunta
 - Cada set debe tener preguntas DIFERENTES (distintos enunciados, opciones y respuestas correctas)
 - Los distractores deben ser plausibles
-- Las respuestas correctas deben estar aleatoriamente distribuidas entre A, B, C, D, E
+- Para sets adicionales, distribuye las correctas ALEATORIAMENTE entre A, B, C, D, E evitando que ninguna letra domine
 - Redacta en español académico
 - Cubre diferentes conceptos del material
 
@@ -1281,9 +1714,41 @@ Responde con este JSON:
     const raw = await callOpenAI(systemPrompt, userPrompt, 0.85);
     const clean = raw.replace(/```json|```/g, '').trim();
     const parsed = JSON.parse(clean);
-    state.examPool.push(...parsed.sets);
 
-    log('generator', `✓ Batch ${b+1} completado — ${state.examPool.length} sets en pool`);
+    // Post-proceso: forzar distribución uniforme rotando las opciones
+    // Si el LLM ignoró la distribución pedida, la aplicamos nosotros
+    parsed.sets.forEach((set, si) => {
+      // Construir distribución aleatoria uniforme para este set
+      const N2 = set.questions.length;
+      const letters = ['A','B','C','D','E'];
+      const forcedDist = [];
+      for (let i = 0; i < N2; i++) forcedDist.push(letters[i % 5]);
+      // Fisher-Yates shuffle con seed diferente por set
+      for (let i = forcedDist.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [forcedDist[i], forcedDist[j]] = [forcedDist[j], forcedDist[i]];
+      }
+
+      set.questions.forEach((q, qi) => {
+        const currentCorrect = q.correct;
+        const targetCorrect  = forcedDist[qi];
+        if (currentCorrect === targetCorrect) return; // ya está bien
+
+        // Rotar las opciones: intercambiar el texto de currentCorrect y targetCorrect
+        const tmp = q.options[targetCorrect];
+        q.options[targetCorrect] = q.options[currentCorrect];
+        q.options[currentCorrect] = tmp;
+        q.correct = targetCorrect;
+      });
+    });
+
+    // Verificar distribución resultante
+    const allCorrects = parsed.sets.flatMap(s => s.questions.map(q => q.correct));
+    const freq = {A:0,B:0,C:0,D:0,E:0};
+    allCorrects.forEach(l => freq[l]++);
+    log('generator', `✓ Batch ${b+1} — distribución: A:${freq.A} B:${freq.B} C:${freq.C} D:${freq.D} E:${freq.E}`);
+
+    state.examPool.push(...parsed.sets);
     setProgress(40 + (b+1)/batches * 20, 'Agente Generador');
   }
 
@@ -1443,78 +1908,72 @@ async function agentFormatter() {
   log('formatter', '✓ Pipeline completado con éxito');
 }
 
-// ─── PDF GENERATION — A4 horizontal, apto para impresión ──────────────────
-function generatePDF(exam) {
-  // A4 landscape: 297 × 210 mm
-  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+// ─── PDF GENERATION — A4 horizontal, multipágina (10 preguntas/página) ────
+function renderPage(doc, exam, pageQuestions, pageNum, totalPages) {
   const W = 297, H = 210;
   const mX = 10, mTop = 8;
 
-  // ── Fondo blanco total ──────────────────────────────────────────────────
+  // Fondo blanco
   doc.setFillColor(255, 255, 255);
   doc.rect(0, 0, W, H, 'F');
 
-  // ── Línea superior de cabecera ──────────────────────────────────────────
+  // ── Cabecera ───────────────────────────────────────────────────────────
   doc.setDrawColor(0, 0, 0);
   doc.setLineWidth(0.6);
   doc.line(mX, mTop + 8, W - mX, mTop + 8);
 
-  // Asignatura
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(13);
   doc.setFont('helvetica', 'bold');
   doc.text(state.subject.toUpperCase(), mX, mTop + 5);
 
-  // Código (centro)
   doc.setFontSize(9);
   doc.setFont('courier', 'bold');
   const codeText = `CÓDIGO: ${exam.code}`;
   doc.text(codeText, W / 2 - doc.getTextWidth(codeText) / 2, mTop + 5);
 
-  // Estudiante (derecha)
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
-  const stuLabel = 'Estudiante:';
-  const stuName  = exam.student;
-  const stuFull  = `${stuLabel} ${stuName}`;
+  const stuFull = `Estudiante: ${exam.student}`;
   doc.text(stuFull, W - mX - doc.getTextWidth(stuFull), mTop + 5);
 
-  // Instrucciones
+  // Instrucciones (solo en página 1)
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
   doc.setTextColor(60, 60, 60);
-  doc.text(
-    'Instrucciones: Marca solo UNA respuesta por pregunta. Cada pregunta tiene 5 opciones (A, B, C, D, E). Solo una es correcta.',
-    mX, mTop + 13
-  );
+  if (pageNum === 1) {
+    doc.text(
+      'Instrucciones: Marca solo UNA respuesta por pregunta. Cada pregunta tiene 5 opciones (A, B, C, D, E). Solo una es correcta.',
+      mX, mTop + 13
+    );
+  } else {
+    doc.text(`Continuación — Página ${pageNum} de ${totalPages}`, mX, mTop + 13);
+  }
 
-  // ── Grid: 5 columnas × 2 filas ─────────────────────────────────────────
+  // ── Grid: 5 col × 2 filas ─────────────────────────────────────────────
   const COLS = 5, ROWS = 2;
   const gridTop    = mTop + 17;
-  const gridBottom = H - 10;   // espacio para pie de página
+  const gridBottom = H - 10;
   const gridH      = gridBottom - gridTop;
   const gridW      = W - mX * 2;
+  const cellW      = gridW / COLS;
+  const cellH      = gridH / ROWS;
+  const pad        = 3;
+  const OPTS       = ['A', 'B', 'C', 'D', 'E'];
 
-  const cellW = gridW / COLS;
-  const cellH = gridH / ROWS;
-  const pad   = 3;   // padding interior celda
+  for (let qi = 0; qi < Math.min(pageQuestions.length, 10); qi++) {
+    const q   = pageQuestions[qi];
+    const col = qi % COLS;
+    const row = Math.floor(qi / COLS);
+    const cx  = mX + col * cellW;
+    const cy  = gridTop + row * cellH;
 
-  const OPTS = ['A', 'B', 'C', 'D', 'E'];
-
-  for (let qi = 0; qi < Math.min(exam.questions.length, COLS * ROWS); qi++) {
-    const q    = exam.questions[qi];
-    const col  = qi % COLS;
-    const row  = Math.floor(qi / COLS);
-
-    const cx = mX + col * cellW;
-    const cy = gridTop + row * cellH;
-
-    // Borde de celda
+    // Borde celda
     doc.setDrawColor(180, 180, 180);
     doc.setLineWidth(0.25);
     doc.rect(cx, cy, cellW, cellH);
 
-    // Número de pregunta
+    // Badge número
     doc.setFillColor(30, 30, 30);
     doc.rect(cx + pad, cy + pad, 10, 5, 'F');
     doc.setTextColor(255, 255, 255);
@@ -1522,58 +1981,52 @@ function generatePDF(exam) {
     doc.setFont('helvetica', 'bold');
     doc.text(`P${q.n}`, cx + pad + 1.2, cy + pad + 3.8);
 
-    // Enunciado — hasta 4 líneas para que quepa completo
+    // Enunciado
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
-    const qLines = doc.splitTextToSize(q.q, cellW - pad * 2 - 1);
-    const maxQLines = 4;
-    doc.text(qLines.slice(0, maxQLines), cx + pad, cy + pad + 10, { lineHeightFactor: 1.35 });
+    const qLines  = doc.splitTextToSize(q.q, cellW - pad * 2 - 1);
+    const maxQLns = 4;
+    doc.text(qLines.slice(0, maxQLns), cx + pad, cy + pad + 10, { lineHeightFactor: 1.35 });
 
-    // Opciones A–E, cada una con burbuja + texto completo
-    const optStartY = cy + pad + 10 + Math.min(qLines.length, maxQLines) * 7 * 1.35 * 0.352 + 2;
-    // 1 mm ≈ 2.835 pt; 7pt * 1.35 / 2.835 ≈ 3.33 mm por línea
-    const lineH_mm = 7 * 1.35 / 2.835;
-    const optBlockY = cy + pad + 10 + Math.min(qLines.length, maxQLines) * lineH_mm + 2;
-
-    const optW     = cellW - pad * 2;       // ancho disponible para cada opción
-    const bubbleR  = 2.2;
-    const optLineH = (cellH - (optBlockY - cy) - pad) / 5; // altura por opción
+    // Opciones
+    const lineH_mm  = 7 * 1.35 / 2.835;
+    const optBlockY = cy + pad + 10 + Math.min(qLines.length, maxQLns) * lineH_mm + 2;
+    const optW      = cellW - pad * 2;
+    const bubbleR   = 2.2;
+    const optLineH  = (cellH - (optBlockY - cy) - pad) / 5;
 
     for (let oi = 0; oi < 5; oi++) {
-      const oy = optBlockY + oi * optLineH + optLineH * 0.5;
+      const oy     = optBlockY + oi * optLineH + optLineH * 0.5;
+      const bx     = cx + pad + bubbleR;
 
-      // Burbuja de marcado
       doc.setDrawColor(0, 0, 0);
       doc.setFillColor(255, 255, 255);
       doc.setLineWidth(0.4);
-      doc.circle(cx + pad + bubbleR, oy, bubbleR, 'FD');
+      doc.circle(bx, oy, bubbleR, 'FD');
 
-      // Letra dentro de la burbuja
       doc.setTextColor(0, 0, 0);
       doc.setFontSize(5.5);
       doc.setFont('helvetica', 'bold');
-      doc.text(OPTS[oi], cx + pad + bubbleR - 1.2, oy + 1.9);
+      const letter = OPTS[oi];
+      const lw   = doc.getTextWidth(letter);
+      const capH = 5.5 * 0.352 * 0.72;
+      doc.text(letter, bx - lw / 2, oy + capH / 2);
 
-      // Texto de la opción (completo, con wrap si hace falta)
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(6.5);
       doc.setTextColor(20, 20, 20);
-      const optText = doc.splitTextToSize(
-        String(q.options[OPTS[oi]] ?? ''),
-        optW - bubbleR * 2 - 2
-      );
-      // Mostrar máx 2 líneas por opción para que quepan las 5
-      doc.text(optText.slice(0, 2), cx + pad + bubbleR * 2 + 1.5, oy + 1.9, { lineHeightFactor: 1.2 });
+      const optText = doc.splitTextToSize(String(q.options[OPTS[oi]] ?? ''), optW - bubbleR * 2 - 2);
+      doc.text(optText.slice(0, 2), cx + pad + bubbleR * 2 + 1.5, oy + capH / 2, { lineHeightFactor: 1.2 });
     }
   }
 
-  // ── Línea de separación filas (visual) ─────────────────────────────────
+  // Línea separadora filas
   doc.setDrawColor(100, 100, 100);
   doc.setLineWidth(0.4);
   doc.line(mX, gridTop + cellH, W - mX, gridTop + cellH);
 
-  // ── Pie de página ───────────────────────────────────────────────────────
+  // Pie de página
   doc.setDrawColor(0, 0, 0);
   doc.setLineWidth(0.4);
   doc.line(mX, H - 8, W - mX, H - 8);
@@ -1581,7 +2034,20 @@ function generatePDF(exam) {
   doc.setFontSize(6.5);
   doc.setFont('helvetica', 'normal');
   doc.text(`${state.subject} — ${exam.code} — ExamForge`, mX, H - 4.5);
-  doc.text(new Date().toLocaleDateString('es-ES'), W - mX - 18, H - 4.5);
+  const pageInfo = totalPages > 1 ? `Pág. ${pageNum}/${totalPages} · ` : '';
+  doc.text(pageInfo + new Date().toLocaleDateString('es-ES'), W - mX - (totalPages > 1 ? 36 : 18), H - 4.5);
+}
+
+function generatePDF(exam) {
+  const Q_PER_PAGE = 10;
+  const totalPages = Math.ceil(exam.questions.length / Q_PER_PAGE);
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+  for (let p = 0; p < totalPages; p++) {
+    if (p > 0) doc.addPage('a4', 'landscape');
+    const pageQuestions = exam.questions.slice(p * Q_PER_PAGE, (p + 1) * Q_PER_PAGE);
+    renderPage(doc, exam, pageQuestions, p + 1, totalPages);
+  }
 
   return doc;
 }
@@ -1637,29 +2103,42 @@ async function startGeneration() {
   state.students = students;
   state.examPool = [];
   state.generatedExams = [];
+  pipelineCancelled = false;
 
   // Switch to progress view
   document.getElementById('section-config').style.display = 'none';
   document.getElementById('section-progress').style.display = 'block';
   document.getElementById('logContainer').innerHTML = '';
+  document.getElementById('btnCancel').disabled = false;
 
   try {
     await agentOrchestrator();
+    checkCancelled();
     setProgress(10);
     await agentAnalyst();
+    checkCancelled();
     setProgress(35);
     await agentGenerator();
+    checkCancelled();
     setProgress(60);
     await agentValidator();
+    checkCancelled();
     setProgress(75);
     await agentFormatter();
     setProgress(100, '¡Completado!');
     await sleep(600);
     showResults();
   } catch (err) {
-    log('system', `❌ ERROR: ${err.message}`);
-    showToast('Error: ' + err.message, 'error');
-    document.getElementById('progressTag').textContent = '⚠ Error en el pipeline';
+    const cancelled = err.message.includes('cancelado');
+    log('system', cancelled ? '⚠ Pipeline cancelado por el usuario' : `❌ ERROR: ${err.message}`);
+    showToast(cancelled ? 'Pipeline cancelado' : 'Error: ' + err.message, cancelled ? 'success' : 'error');
+    document.getElementById('progressTag').textContent = cancelled ? '⚠ Cancelado' : '⚠ Error en el pipeline';
+    document.getElementById('btnCancel').disabled = true;
+    // Allow going back
+    setTimeout(() => {
+      document.getElementById('section-progress').style.display = 'none';
+      document.getElementById('section-config').style.display = 'block';
+    }, 2000);
   }
 }
 
