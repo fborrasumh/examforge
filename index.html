@@ -1973,10 +1973,12 @@ function renderPage(doc, exam, pageQuestions, pageNum, totalPages) {
     doc.setLineWidth(0.25);
     doc.rect(cx, cy, cellW, cellH);
 
-    // Badge número
-    doc.setFillColor(30, 30, 30);
-    doc.rect(cx + pad, cy + pad, 10, 5, 'F');
-    doc.setTextColor(255, 255, 255);
+    // Badge número — fondo blanco, borde negro
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.5);
+    doc.rect(cx + pad, cy + pad, 10, 5, 'FD');
+    doc.setTextColor(0, 0, 0);
     doc.setFontSize(7);
     doc.setFont('helvetica', 'bold');
     doc.text(`P${q.n}`, cx + pad + 1.2, cy + pad + 3.8);
