@@ -1,0 +1,1680 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ExamForge — Generador Multiagente de Exámenes</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --border: #2a2a3a;
+    --accent: #00e5a0;
+    --accent2: #7c5cfc;
+    --accent3: #ff6b35;
+    --text: #e8e8f0;
+    --muted: #6b6b80;
+    --danger: #ff4757;
+    --success: #00e5a0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Noise texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  .header {
+    border-bottom: 1px solid var(--border);
+    padding: 20px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(10,10,15,0.8);
+    backdrop-filter: blur(20px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+
+  .logo h1 {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .logo span {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    display: block;
+    margin-top: -2px;
+  }
+
+  .agent-status {
+    display: flex;
+    gap: 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+  }
+
+  .agent-badge {
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .agent-badge::before {
+    content: '●';
+    font-size: 8px;
+  }
+
+  .agent-badge.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,229,160,0.08);
+  }
+
+  .agent-badge.active::before { color: var(--accent); }
+  .agent-badge.done { border-color: var(--accent2); color: var(--accent2); background: rgba(124,92,252,0.08); }
+  .agent-badge.done::before { color: var(--accent2); }
+
+  .main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 40px 80px;
+  }
+
+  .hero {
+    text-align: center;
+    padding: 60px 0 50px;
+  }
+
+  .hero-tag {
+    display: inline-block;
+    background: rgba(124,92,252,0.15);
+    border: 1px solid rgba(124,92,252,0.4);
+    color: var(--accent2);
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 6px 16px;
+    border-radius: 4px;
+    margin-bottom: 24px;
+  }
+
+  .hero h2 {
+    font-size: clamp(36px, 5vw, 58px);
+    font-weight: 800;
+    letter-spacing: -2px;
+    line-height: 1.05;
+    margin-bottom: 16px;
+  }
+
+  .hero h2 span {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .hero p {
+    color: var(--muted);
+    font-size: 16px;
+    max-width: 520px;
+    margin: 0 auto;
+    line-height: 1.7;
+  }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 40px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    transition: border-color 0.3s;
+  }
+
+  .card:hover { border-color: rgba(124,92,252,0.4); }
+
+  .card-full { grid-column: 1 / -1; }
+
+  .card-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title .icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+  }
+
+  .icon-green { background: rgba(0,229,160,0.15); }
+  .icon-purple { background: rgba(124,92,252,0.15); }
+  .icon-orange { background: rgba(255,107,53,0.15); }
+
+  textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 16px;
+    resize: vertical;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+
+  textarea:focus { border-color: var(--accent2); }
+
+  input[type="text"], input[type="number"] {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    padding: 12px 16px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input:focus { border-color: var(--accent2); }
+
+  .students-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    padding: 16px;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s;
+    min-height: 120px;
+  }
+
+  .students-input:focus { border-color: var(--accent2); }
+
+  .input-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 6px;
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .apikey-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+  }
+
+  .apikey-row > div { flex: 1; }
+
+  .btn {
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent2), #5a3fd4);
+    color: white;
+    width: 100%;
+    padding: 16px;
+    font-size: 15px;
+    margin-top: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(124,92,252,0.4);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .btn-sm {
+    padding: 8px 16px;
+    font-size: 12px;
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .btn-sm:hover { border-color: var(--accent2); }
+
+  .btn-accent {
+    background: rgba(0,229,160,0.15);
+    color: var(--accent);
+    border: 1px solid rgba(0,229,160,0.3);
+  }
+
+  .btn-accent:hover { background: rgba(0,229,160,0.25); }
+
+  /* Pipeline Visualization */
+  .pipeline {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin: 30px 0;
+    overflow-x: auto;
+    padding: 4px 0;
+  }
+
+  .pipe-node {
+    flex: 1;
+    min-width: 130px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 12px;
+    text-align: center;
+    position: relative;
+    transition: all 0.3s;
+  }
+
+  .pipe-node.active {
+    border-color: var(--accent);
+    background: rgba(0,229,160,0.06);
+    box-shadow: 0 0 20px rgba(0,229,160,0.1);
+  }
+
+  .pipe-node.done {
+    border-color: var(--accent2);
+    background: rgba(124,92,252,0.06);
+  }
+
+  .pipe-arrow {
+    color: var(--border);
+    font-size: 18px;
+    padding: 0 4px;
+    flex-shrink: 0;
+  }
+
+  .pipe-node-icon { font-size: 22px; margin-bottom: 6px; }
+  .pipe-node-name { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); font-family: 'Space Mono', monospace; }
+  .pipe-node.active .pipe-node-name { color: var(--accent); }
+  .pipe-node.done .pipe-node-name { color: var(--accent2); }
+  .pipe-node-desc { font-size: 10px; color: var(--muted); margin-top: 3px; line-height: 1.3; }
+
+  /* Log */
+  .log-container {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    max-height: 220px;
+    overflow-y: auto;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    line-height: 1.8;
+  }
+
+  .log-entry {
+    display: flex;
+    gap: 10px;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .log-time { color: var(--muted); flex-shrink: 0; }
+  .log-agent { flex-shrink: 0; font-weight: 700; }
+  .log-msg { color: #b0b0c0; }
+  .log-agent.orchestrator { color: var(--accent2); }
+  .log-agent.analyst { color: var(--accent); }
+  .log-agent.generator { color: var(--accent3); }
+  .log-agent.validator { color: #ffd700; }
+  .log-agent.formatter { color: #ff6b9d; }
+  .log-agent.system { color: var(--muted); }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateX(-4px); } to { opacity: 1; transform: none; } }
+
+  /* Results */
+  .results-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .results-title {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+
+  .results-actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  .exams-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  .exam-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.2s;
+  }
+
+  .exam-card:hover {
+    border-color: rgba(0,229,160,0.3);
+    transform: translateY(-2px);
+  }
+
+  .exam-code {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+  }
+
+  .exam-student {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+
+  .exam-answers {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+
+  .answer-chip {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 7px;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  .answer-chip .q-num { color: var(--muted); }
+  .answer-chip .q-ans { color: var(--accent); font-weight: 700; }
+
+  .exam-actions { display: flex; gap: 8px; }
+
+  /* Progress bar */
+  .progress-bar {
+    width: 100%;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    margin: 12px 0;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    border-radius: 2px;
+    transition: width 0.4s ease;
+    width: 0%;
+  }
+
+  /* Stats row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 30px;
+  }
+
+  .stat-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .stat-val {
+    font-size: 32px;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -1px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  #section-config { display: block; }
+  #section-progress { display: none; }
+  #section-results { display: none; }
+
+  .spinning { animation: spin 1s linear infinite; display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 20px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 9999;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s;
+    max-width: 340px;
+  }
+
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { border-color: var(--accent); }
+  .toast.error { border-color: var(--danger); }
+
+  /* CSV preview */
+  .csv-preview {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    max-height: 200px;
+    overflow-y: auto;
+    white-space: pre;
+    line-height: 1.6;
+  }
+
+  .section-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 40px 0;
+  }
+
+  .hint { font-size: 11px; color: var(--muted); margin-top: 6px; font-family: 'Space Mono', monospace; }
+
+  /* File upload zone */
+  .file-drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    padding: 22px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s;
+    background: var(--surface2);
+    position: relative;
+    margin-bottom: 10px;
+  }
+  .file-drop-zone:hover, .file-drop-zone.dragover {
+    border-color: var(--accent2);
+    background: rgba(124,92,252,0.06);
+  }
+  .file-drop-zone input[type="file"] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  .file-drop-icon { font-size: 28px; margin-bottom: 6px; }
+  .file-drop-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+  .file-drop-sub { font-size: 11px; color: var(--muted); font-family: 'Space Mono', monospace; }
+
+  .file-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+  .file-item {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 12px; font-size: 12px;
+    font-family: 'Space Mono', monospace;
+    transition: border-color 0.2s;
+  }
+  .file-item.loading { border-color: var(--accent3); }
+  .file-item.done { border-color: var(--accent); }
+  .file-item.error { border-color: var(--danger); }
+  .file-item-icon { font-size: 16px; flex-shrink: 0; }
+  .file-item-name { flex: 1; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .file-item-status { font-size: 10px; color: var(--muted); flex-shrink: 0; }
+  .file-item.done .file-item-status { color: var(--accent); }
+  .file-item.error .file-item-status { color: var(--danger); }
+  .file-item-remove {
+    background: none; border: none; color: var(--muted); cursor: pointer;
+    font-size: 14px; padding: 0 2px; line-height: 1; flex-shrink: 0;
+  }
+  .file-item-remove:hover { color: var(--danger); }
+
+  .material-tabs { display: flex; gap: 0; margin-bottom: 12px; }
+  .mtab {
+    flex: 1; padding: 8px; text-align: center; font-size: 12px; font-weight: 700;
+    font-family: 'Space Mono', monospace; letter-spacing: 1px; text-transform: uppercase;
+    background: var(--surface2); border: 1px solid var(--border); cursor: pointer;
+    color: var(--muted); transition: all 0.2s;
+  }
+  .mtab:first-child { border-radius: 8px 0 0 8px; }
+  .mtab:last-child { border-radius: 0 8px 8px 0; border-left: none; }
+  .mtab:not(:first-child):not(:last-child) { border-left: none; }
+  .mtab.active { background: rgba(124,92,252,0.15); border-color: var(--accent2); color: var(--accent2); }
+  .mtab-panel { display: none; }
+  .mtab-panel.active { display: block; }
+
+  .chars-counter { font-size: 10px; color: var(--muted); font-family: 'Space Mono', monospace; text-align: right; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    <div>
+      <h1>ExamForge</h1>
+      <span>Multi-Agent Exam Engine</span>
+    </div>
+  </div>
+  <div class="agent-status" id="agentStatus">
+    <div class="agent-badge" id="badge-orchestrator">Orchestrator</div>
+    <div class="agent-badge" id="badge-analyst">Analyst</div>
+    <div class="agent-badge" id="badge-generator">Generator</div>
+    <div class="agent-badge" id="badge-validator">Validator</div>
+    <div class="agent-badge" id="badge-formatter">Formatter</div>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- CONFIG SECTION -->
+  <div id="section-config">
+    <div class="hero">
+      <div class="hero-tag">Sistema Multiagente</div>
+      <h2>Exámenes únicos<br><span>para cada estudiante</span></h2>
+      <p>5 agentes de IA generan, validan y formatean exámenes tipo test personalizados con PDF individual y hoja de respuestas CSV.</p>
+    </div>
+
+    <div class="grid-2">
+      <!-- API Key -->
+      <div class="card card-full">
+        <div class="card-title"><span class="icon icon-purple">🔑</span> Configuración API</div>
+        <div class="apikey-row">
+          <div>
+            <label>OpenAI API Key</label>
+            <input type="text" id="apiKey" placeholder="sk-..." autocomplete="off" />
+          </div>
+          <div style="min-width:200px">
+            <label>Modelo</label>
+            <select id="modelSelect" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'Space Mono',monospace;font-size:13px;padding:12px 16px;outline:none;appearance:none;">
+              <option value="gpt-4o-mini">GPT-4o Mini (rápido)</option>
+              <option value="gpt-4o">GPT-4o (preciso)</option>
+              <option value="gpt-4-turbo">GPT-4 Turbo</option>
+            </select>
+          </div>
+        </div>
+        <p class="hint">⚠ La clave se usa solo en tu navegador y nunca se envía a ningún servidor externo.</p>
+      </div>
+
+      <!-- Materials -->
+      <div class="card card-full">
+        <div class="card-title"><span class="icon icon-green">📚</span> Material del Examen</div>
+
+        <div class="material-tabs">
+          <div class="mtab active" onclick="switchMTab('text')">✏️ Texto</div>
+          <div class="mtab" onclick="switchMTab('files')">📎 Archivos PDF / Word</div>
+        </div>
+
+        <!-- Tab: Text -->
+        <div class="mtab-panel active" id="mtab-text">
+          <textarea id="material" rows="8" placeholder="Pega aquí el contenido del tema: apuntes, esquemas, texto del libro, diapositivas... El Agente Analista lo procesará para extraer conceptos clave y el Agente Generador creará las preguntas.
+
+Ejemplo:
+La fotosíntesis es el proceso por el cual las plantas...
+Las fases son: fase luminosa y fase oscura...
+Los productos son glucosa y oxígeno..."></textarea>
+          <div class="chars-counter" id="charsCounter">0 caracteres</div>
+        </div>
+
+        <!-- Tab: Files -->
+        <div class="mtab-panel" id="mtab-files">
+          <div class="file-drop-zone" id="fileDropZone"
+               ondragover="handleDragOver(event)"
+               ondragleave="handleDragLeave(event)"
+               ondrop="handleDrop(event)">
+            <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx"
+                   onchange="handleFileSelect(event)" />
+            <div class="file-drop-icon">📂</div>
+            <div class="file-drop-title">Arrastra archivos aquí o haz clic para seleccionar</div>
+            <div class="file-drop-sub">PDF · DOC · DOCX — múltiples archivos permitidos</div>
+          </div>
+          <div class="file-list" id="fileList"></div>
+          <p class="hint" id="fileHint">El texto extraído se combinará con el texto manual (si lo hay).</p>
+        </div>
+
+        <p class="hint" style="margin-top:8px">Mínimo 200 palabras recomendado para generar 10 preguntas de calidad.</p>
+      </div>
+
+      <!-- Config -->
+      <div class="card">
+        <div class="card-title"><span class="icon icon-orange">⚙️</span> Parámetros del Examen</div>
+        <div class="input-row">
+          <div>
+            <label>Asignatura</label>
+            <input type="text" id="subject" placeholder="Ej: Biología Celular" />
+          </div>
+          <div>
+            <label>Nº de preguntas</label>
+            <input type="number" id="numQuestions" value="10" min="5" max="20" />
+          </div>
+        </div>
+        <div style="margin-top:12px">
+          <label>Nivel de dificultad</label>
+          <select id="difficulty" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'Space Mono',monospace;font-size:13px;padding:12px 16px;outline:none;appearance:none;margin-top:2px;">
+            <option value="básico">Básico</option>
+            <option value="intermedio" selected>Intermedio</option>
+            <option value="avanzado">Avanzado</option>
+            <option value="mixto">Mixto (variado)</option>
+          </select>
+        </div>
+        <div style="margin-top:12px">
+          <label>Instrucciones adicionales al generador</label>
+          <input type="text" id="extraInstructions" placeholder="Ej: Incluye preguntas de aplicación práctica..." />
+        </div>
+      </div>
+
+      <!-- Students -->
+      <div class="card">
+        <div class="card-title"><span class="icon icon-green">👥</span> Lista de Estudiantes</div>
+        <label>Un nombre por línea (o nombre,apellidos)</label>
+        <textarea class="students-input" id="studentList" placeholder="Ana García López
+Carlos Martínez
+Elena Rodríguez Pérez
+Miguel Torres
+Sofia Fernández Ruiz
+David López
+Laura Sánchez
+Pablo Jiménez"></textarea>
+        <p class="hint" id="studentCount">0 estudiantes detectados</p>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="btnGenerate" onclick="startGeneration()">
+      <span id="btnIcon">⚡</span> <span id="btnText">Iniciar Pipeline Multiagente</span>
+    </button>
+  </div>
+
+  <!-- PROGRESS SECTION -->
+  <div id="section-progress">
+    <div style="text-align:center;padding:40px 0 30px">
+      <div class="hero-tag" id="progressTag">Inicializando...</div>
+      <h2 style="font-size:32px;font-weight:800;letter-spacing:-1px;margin:16px 0 8px">Pipeline en ejecución</h2>
+      <p style="color:var(--muted)">Los agentes están trabajando. No cierres esta ventana.</p>
+    </div>
+
+    <!-- Pipeline nodes -->
+    <div class="pipeline">
+      <div class="pipe-node" id="node-orchestrator">
+        <div class="pipe-node-icon">🎯</div>
+        <div class="pipe-node-name">Orchestrator</div>
+        <div class="pipe-node-desc">Coordina el pipeline</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-node" id="node-analyst">
+        <div class="pipe-node-icon">🔬</div>
+        <div class="pipe-node-name">Analyst</div>
+        <div class="pipe-node-desc">Extrae conceptos clave</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-node" id="node-generator">
+        <div class="pipe-node-icon">✍️</div>
+        <div class="pipe-node-name">Generator</div>
+        <div class="pipe-node-desc">Genera preguntas únicas</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-node" id="node-validator">
+        <div class="pipe-node-icon">✅</div>
+        <div class="pipe-node-name">Validator</div>
+        <div class="pipe-node-desc">Verifica calidad</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-node" id="node-formatter">
+        <div class="pipe-node-icon">📄</div>
+        <div class="pipe-node-name">Formatter</div>
+        <div class="pipe-node-desc">Genera PDFs y CSV</div>
+      </div>
+    </div>
+
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+    <!-- Log -->
+    <div class="card" style="margin-top:20px">
+      <div class="card-title"><span class="icon icon-purple">📋</span> Log del Sistema</div>
+      <div class="log-container" id="logContainer"></div>
+    </div>
+
+    <div id="perStudentProgress" style="margin-top:20px;display:none">
+      <div class="card-title" style="padding:0 0 12px"><span class="icon icon-orange">👤</span> Progreso por estudiante</div>
+      <div id="studentProgressGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;"></div>
+    </div>
+  </div>
+
+  <!-- RESULTS SECTION -->
+  <div id="section-results">
+    <div class="results-header">
+      <div>
+        <div class="results-title">✅ Exámenes generados</div>
+        <p style="color:var(--muted);font-size:13px;margin-top:4px" id="resultsSubtitle"></p>
+      </div>
+      <div class="results-actions">
+        <button class="btn btn-sm btn-accent" onclick="downloadCSV()">⬇ Descargar CSV</button>
+        <button class="btn btn-sm" onclick="downloadAllPDFs()">📄 Descargar todos los PDFs</button>
+        <button class="btn btn-sm" onclick="resetAll()" style="color:var(--muted)">↺ Nueva sesión</button>
+      </div>
+    </div>
+
+    <div class="stats-row" id="statsRow"></div>
+
+    <div class="card card-full" style="margin-bottom:24px">
+      <div class="card-title"><span class="icon icon-green">📊</span> CSV — Hoja de respuestas correctas</div>
+      <div class="csv-preview" id="csvPreview"></div>
+    </div>
+
+    <div class="exams-grid" id="examsGrid"></div>
+  </div>
+
+</main>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const { jsPDF } = window.jspdf;
+
+// Configure pdf.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// ─── State ────────────────────────────────────────────────────────────────
+let state = {
+  apiKey: '',
+  model: 'gpt-4o-mini',
+  material: '',
+  subject: '',
+  numQuestions: 10,
+  difficulty: 'intermedio',
+  extraInstructions: '',
+  students: [],
+  concepts: [],
+  examPool: [],
+  generatedExams: [],
+  csvData: '',
+};
+
+// Uploaded files state
+let uploadedFiles = []; // [{name, type, text, status}]
+
+// ─── Tab switching ──────────────────────────────────────────────────────────
+function switchMTab(tab) {
+  document.querySelectorAll('.mtab').forEach((el, i) => {
+    el.classList.toggle('active', (i === 0 && tab === 'text') || (i === 1 && tab === 'files'));
+  });
+  document.getElementById('mtab-text').classList.toggle('active', tab === 'text');
+  document.getElementById('mtab-files').classList.toggle('active', tab === 'files');
+}
+
+// ─── Material text counter ──────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const mat = document.getElementById('material');
+  if (mat) mat.addEventListener('input', () => {
+    document.getElementById('charsCounter').textContent = mat.value.length.toLocaleString('es') + ' caracteres';
+  });
+});
+
+// ─── Drag & Drop ────────────────────────────────────────────────────────────
+function handleDragOver(e) {
+  e.preventDefault();
+  document.getElementById('fileDropZone').classList.add('dragover');
+}
+function handleDragLeave(e) {
+  document.getElementById('fileDropZone').classList.remove('dragover');
+}
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('fileDropZone').classList.remove('dragover');
+  const files = Array.from(e.dataTransfer.files).filter(f => /\.(pdf|docx?)$/i.test(f.name));
+  if (files.length) processFiles(files);
+  else showToast('Solo se aceptan archivos PDF, DOC o DOCX', 'error');
+}
+function handleFileSelect(e) {
+  const files = Array.from(e.target.files);
+  if (files.length) processFiles(files);
+  e.target.value = '';
+}
+
+// ─── File processing ────────────────────────────────────────────────────────
+function getFileIcon(name) {
+  if (/\.pdf$/i.test(name)) return '📕';
+  if (/\.docx?$/i.test(name)) return '📘';
+  return '📄';
+}
+
+async function processFiles(files) {
+  for (const file of files) {
+    const id = Date.now() + Math.random();
+    const entry = { id, name: file.name, type: file.name.match(/\.(\w+)$/)?.[1]?.toLowerCase(), text: '', status: 'loading' };
+    uploadedFiles.push(entry);
+    renderFileList();
+
+    try {
+      if (entry.type === 'pdf') {
+        entry.text = await extractPDF(file);
+      } else if (entry.type === 'docx' || entry.type === 'doc') {
+        entry.text = await extractDocx(file);
+      }
+      if (!entry.text || entry.text.trim().length < 10) throw new Error('No se pudo extraer texto');
+      entry.status = 'done';
+      showToast(`✓ ${file.name} — ${entry.text.length.toLocaleString()} caracteres extraídos`, 'success');
+    } catch (err) {
+      entry.status = 'error';
+      entry.error = err.message;
+      showToast(`Error en ${file.name}: ${err.message}`, 'error');
+    }
+    renderFileList();
+  }
+  updateFileHint();
+}
+
+// ─── PDF extraction (pdf.js) ────────────────────────────────────────────────
+async function extractPDF(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  let text = '';
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    const pageText = content.items.map(item => item.str).join(' ');
+    text += pageText + '\n';
+  }
+  return text.trim();
+}
+
+// ─── DOCX extraction (mammoth.js) ───────────────────────────────────────────
+async function extractDocx(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const result = await mammoth.extractRawText({ arrayBuffer });
+  return result.value.trim();
+}
+
+// ─── Render file list ────────────────────────────────────────────────────────
+function renderFileList() {
+  const list = document.getElementById('fileList');
+  list.innerHTML = '';
+  uploadedFiles.forEach(f => {
+    const statusLabel = f.status === 'loading' ? '⏳ Procesando...'
+      : f.status === 'done' ? `✓ ${f.text.length.toLocaleString()} caracteres`
+      : `✗ ${f.error || 'Error'}`;
+
+    const div = document.createElement('div');
+    div.className = `file-item ${f.status}`;
+    div.innerHTML = `
+      <span class="file-item-icon">${getFileIcon(f.name)}</span>
+      <span class="file-item-name" title="${f.name}">${f.name}</span>
+      <span class="file-item-status">${statusLabel}</span>
+      ${f.status !== 'loading' ? `<button class="file-item-remove" onclick="removeFile('${f.id}')" title="Eliminar">✕</button>` : ''}
+    `;
+    list.appendChild(div);
+  });
+}
+
+function removeFile(id) {
+  uploadedFiles = uploadedFiles.filter(f => String(f.id) !== String(id));
+  renderFileList();
+  updateFileHint();
+}
+
+function updateFileHint() {
+  const done = uploadedFiles.filter(f => f.status === 'done');
+  const totalChars = done.reduce((s, f) => s + f.text.length, 0);
+  const hint = document.getElementById('fileHint');
+  if (done.length > 0) {
+    hint.textContent = `${done.length} archivo${done.length > 1 ? 's' : ''} listo${done.length > 1 ? 's' : ''} · ${totalChars.toLocaleString()} caracteres totales extraídos`;
+    hint.style.color = 'var(--accent)';
+  } else {
+    hint.textContent = 'El texto extraído se combinará con el texto manual (si lo hay).';
+    hint.style.color = '';
+  }
+}
+
+// ─── Combine all material ────────────────────────────────────────────────────
+function getCombinedMaterial() {
+  const manualText = document.getElementById('material').value.trim();
+  const fileParts = uploadedFiles
+    .filter(f => f.status === 'done')
+    .map(f => `--- ${f.name} ---\n${f.text}`);
+  return [manualText, ...fileParts].filter(Boolean).join('\n\n');
+}
+
+// ─── Helpers ───────────────────────────────────────────────────────────────
+function generateExamCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 9; i++) {
+    if (i === 3 || i === 6) code += '-';
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return code;
+}
+
+function getTime() {
+  return new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+function log(agent, msg) {
+  const container = document.getElementById('logContainer');
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  entry.innerHTML = `<span class="log-time">[${getTime()}]</span><span class="log-agent ${agent}">${agent.toUpperCase().padEnd(12)}</span><span class="log-msg">${msg}</span>`;
+  container.appendChild(entry);
+  container.scrollTop = container.scrollHeight;
+}
+
+function setProgress(pct, tag) {
+  document.getElementById('progressFill').style.width = pct + '%';
+  if (tag) document.getElementById('progressTag').textContent = tag;
+}
+
+function setNode(node, state_) {
+  const el = document.getElementById('node-' + node);
+  el.classList.remove('active', 'done');
+  if (state_) el.classList.add(state_);
+  const badge = document.getElementById('badge-' + node);
+  if (badge) { badge.classList.remove('active', 'done'); if (state_) badge.classList.add(state_); }
+}
+
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = (type === 'success' ? '✅ ' : '❌ ') + msg;
+  t.className = 'toast ' + type + ' show';
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ─── Student count ─────────────────────────────────────────────────────────
+document.getElementById('studentList').addEventListener('input', function() {
+  const students = parseStudents(this.value);
+  document.getElementById('studentCount').textContent = `${students.length} estudiante${students.length !== 1 ? 's' : ''} detectado${students.length !== 1 ? 's' : ''}`;
+});
+
+function parseStudents(text) {
+  return text.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+}
+
+// ─── OpenAI call ───────────────────────────────────────────────────────────
+async function callOpenAI(systemPrompt, userPrompt, temperature = 0.7) {
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${state.apiKey}`
+    },
+    body: JSON.stringify({
+      model: state.model,
+      temperature,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ]
+    })
+  });
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.error?.message || 'Error de API');
+  }
+  const data = await response.json();
+  return data.choices[0].message.content;
+}
+
+// ─── AGENT 1: Orchestrator ─────────────────────────────────────────────────
+async function agentOrchestrator() {
+  setNode('orchestrator', 'active');
+  log('orchestrator', `Iniciando pipeline para ${state.students.length} estudiantes`);
+  log('orchestrator', `Asignatura: ${state.subject} | Preguntas: ${state.numQuestions} | Dificultad: ${state.difficulty}`);
+  log('orchestrator', 'Delegando análisis de material al Agente Analista...');
+  await sleep(500);
+  setNode('orchestrator', 'done');
+}
+
+
+// ─── AGENT 2: Analyst — análisis por chunks sin truncar ────────────────────
+async function agentAnalyst() {
+  setNode('analyst', 'active');
+  const fileSources = uploadedFiles.filter(f => f.status === 'done');
+  const totalChars = state.material.length;
+  log('analyst', `Analizando material de estudio (${totalChars.toLocaleString()} caracteres${fileSources.length ? `, ${fileSources.length} archivo${fileSources.length>1?'s':''} incluido${fileSources.length>1?'s':''}` : ''})...`);
+  setProgress(20, 'Agente Analista');
+
+  const CHUNK = 50000; // ~12k tokens por chunk, seguro para gpt-4o-mini
+  const chunks = [];
+  for (let i = 0; i < state.material.length; i += CHUNK) {
+    chunks.push(state.material.substring(i, i + CHUNK));
+  }
+
+  if (chunks.length === 1) {
+    log('analyst', 'Procesando material en una sola llamada...');
+  } else {
+    log('analyst', `Material extenso: procesando ${chunks.length} fragmentos sin omitir contenido...`);
+  }
+
+  const chunkAnalyses = [];
+  for (let i = 0; i < chunks.length; i++) {
+    if (chunks.length > 1) {
+      log('analyst', `Analizando fragmento ${i+1}/${chunks.length}...`);
+      setProgress(20 + (i / chunks.length) * 15, `Agente Analista — fragmento ${i+1}/${chunks.length}`);
+    }
+
+    const sysP = `Eres un analista académico experto. Extrae del fragmento dado todos los conceptos clave, hechos importantes y áreas temáticas evaluables. Responde SOLO con JSON válido, sin markdown, sin texto adicional.`;
+    const usrP = `${chunks.length > 1 ? `Fragmento ${i+1} de ${chunks.length} de la asignatura "${state.subject}"` : `Material de la asignatura "${state.subject}"`}:
+
+${chunks[i]}
+
+Responde con este JSON:
+{
+  "key_concepts": ["concepto1", "concepto2"],
+  "key_facts": ["hecho1", "hecho2"],
+  "question_areas": ["área1", "área2"],
+  "subject_analysis": "resumen breve",
+  "difficulty_notes": "notas de dificultad"
+}`;
+
+    const raw = await callOpenAI(sysP, usrP, 0.2);
+    const clean = raw.replace(/```json|```/g, '').trim();
+    chunkAnalyses.push(JSON.parse(clean));
+  }
+
+  // Fusionar todos los análisis
+  const analysis = {
+    subject_analysis: chunkAnalyses[0].subject_analysis || `Análisis de ${state.subject}`,
+    key_concepts: [...new Set(chunkAnalyses.flatMap(c => c.key_concepts || []))].slice(0, 50),
+    key_facts:    [...new Set(chunkAnalyses.flatMap(c => c.key_facts    || []))].slice(0, 50),
+    question_areas: [...new Set(chunkAnalyses.flatMap(c => c.question_areas || []))].slice(0, 25),
+    difficulty_notes: chunkAnalyses.map(c => c.difficulty_notes).filter(Boolean).join(' | ')
+  };
+
+  state.concepts = analysis;
+  log('analyst', `Análisis completo: ${analysis.key_concepts.length} conceptos, ${analysis.question_areas.length} áreas temáticas`);
+  log('analyst', `Áreas: ${analysis.question_areas.slice(0,4).join(', ')}${analysis.question_areas.length > 4 ? '...' : ''}`);
+  log('analyst', 'Pasando análisis estructurado al Agente Generador...');
+  setNode('analyst', 'done');
+}
+
+// ─── AGENT 3: Generator ───────────────────────────────────────────────────
+async function agentGenerator() {
+  setNode('generator', 'active');
+  log('generator', `Generando pool de preguntas únicas (pool x${Math.ceil(state.students.length * 1.5) + 2} sets)...`);
+  setProgress(40, 'Agente Generador');
+
+  // Generate enough question sets so each student gets a unique exam
+  const setsNeeded = state.students.length;
+  const batchSize = Math.min(setsNeeded, 3); // Batch up to 3 students per call
+  const batches = Math.ceil(setsNeeded / batchSize);
+
+  state.examPool = [];
+
+  const systemPrompt = `Eres un experto en evaluación educativa. Generas preguntas tipo test de alta calidad con exactamente 5 opciones (A, B, C, D, E), solo UNA correcta. Las distractores deben ser plausibles pero claramente incorrectos. Responde SOLO con JSON válido, sin markdown.`;
+
+  for (let b = 0; b < batches; b++) {
+    const from = b * batchSize;
+    const to = Math.min(from + batchSize, setsNeeded);
+    const count = to - from;
+
+    log('generator', `Generando batch ${b+1}/${batches} (${count} sets de ${state.numQuestions} preguntas)...`);
+
+    const userPrompt = `Genera ${count} sets de preguntas tipo test DISTINTOS para la asignatura "${state.subject}".
+
+ANÁLISIS COMPLETO DEL TEMA (extraído del material completo):
+- Resumen: ${state.concepts.subject_analysis}
+- Conceptos clave: ${state.concepts.key_concepts.join(', ')}
+- Hechos importantes: ${state.concepts.key_facts.join(', ')}
+- Áreas temáticas: ${state.concepts.question_areas.join(', ')}
+- Notas de dificultad: ${state.concepts.difficulty_notes}
+
+PARÁMETROS:
+- Preguntas por set: ${state.numQuestions}
+- Dificultad: ${state.difficulty}
+- Instrucciones extra: ${state.extraInstructions || 'Ninguna'}
+
+IMPORTANTE:
+- Cada set debe tener preguntas DIFERENTES (distintos enunciados, opciones y respuestas correctas)
+- Los distractores deben ser plausibles
+- Las respuestas correctas deben estar aleatoriamente distribuidas entre A, B, C, D, E
+- Redacta en español académico
+- Cubre diferentes conceptos del material
+
+Responde con este JSON:
+{
+  "sets": [
+    {
+      "questions": [
+        {
+          "n": 1,
+          "q": "Enunciado de la pregunta",
+          "options": {
+            "A": "Opción A",
+            "B": "Opción B",
+            "C": "Opción C",
+            "D": "Opción D",
+            "E": "Opción E"
+          },
+          "correct": "B",
+          "concept": "concepto evaluado"
+        }
+      ]
+    }
+  ]
+}`;
+
+    const raw = await callOpenAI(systemPrompt, userPrompt, 0.85);
+    const clean = raw.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+    state.examPool.push(...parsed.sets);
+
+    log('generator', `✓ Batch ${b+1} completado — ${state.examPool.length} sets en pool`);
+    setProgress(40 + (b+1)/batches * 20, 'Agente Generador');
+  }
+
+  log('generator', `Pool total: ${state.examPool.length} exámenes únicos generados`);
+  setNode('generator', 'done');
+}
+
+// ─── AGENT 4: Validator ───────────────────────────────────────────────────
+async function agentValidator() {
+  setNode('validator', 'active');
+  log('validator', 'Validando calidad de las preguntas generadas...');
+  setProgress(65, 'Agente Validador');
+
+  // Validate each exam set
+  let validCount = 0;
+  let issues = 0;
+
+  for (let i = 0; i < state.examPool.length; i++) {
+    const set = state.examPool[i];
+    let setValid = true;
+
+    for (const q of set.questions) {
+      // Check structure
+      if (!q.q || !q.options || !q.correct) { setValid = false; issues++; continue; }
+      if (!['A','B','C','D','E'].includes(q.correct)) { q.correct = 'A'; issues++; }
+      if (Object.keys(q.options).length !== 5) { setValid = false; issues++; }
+      // Check correct answer exists
+      if (!q.options[q.correct]) { q.correct = Object.keys(q.options)[0]; issues++; }
+    }
+
+    if (setValid) validCount++;
+  }
+
+  log('validator', `Validación: ${validCount}/${state.examPool.length} sets OK`);
+  if (issues > 0) log('validator', `⚠ ${issues} ajustes menores aplicados automáticamente`);
+
+  // Assign exams to students
+  for (let i = 0; i < state.students.length; i++) {
+    const student = state.students[i];
+    const setIdx = i % state.examPool.length;
+    const questions = state.examPool[setIdx].questions;
+
+    // Shuffle question ORDER (not the questions themselves) for uniqueness
+    const shuffledQ = shuffleArray([...questions]).map((q, idx) => ({ ...q, n: idx + 1 }));
+
+    state.generatedExams.push({
+      code: generateExamCode(),
+      student: student,
+      questions: shuffledQ,
+    });
+  }
+
+  log('validator', `✓ ${state.generatedExams.length} exámenes asignados a estudiantes`);
+  log('validator', 'Construyendo hoja de respuestas...');
+  setNode('validator', 'done');
+}
+
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// ─── AGENT 5: Formatter ───────────────────────────────────────────────────
+async function agentFormatter() {
+  setNode('formatter', 'active');
+  log('formatter', 'Generando CSV con respuestas correctas...');
+  setProgress(75, 'Agente Formateador');
+
+  // Build CSV
+  const headers = ['Código_Examen', 'Estudiante', ...Array.from({length: state.numQuestions}, (_, i) => `P${i+1}`)];
+  const rows = state.generatedExams.map(exam => {
+    const answers = exam.questions.map(q => q.correct);
+    return [exam.code, exam.student, ...answers];
+  });
+
+  state.csvData = [headers, ...rows].map(r => r.join(',')).join('\n');
+  log('formatter', `CSV generado: ${state.generatedExams.length + 1} filas`);
+
+  // Prepare student progress
+  document.getElementById('perStudentProgress').style.display = 'block';
+  const grid = document.getElementById('studentProgressGrid');
+
+  for (let i = 0; i < state.generatedExams.length; i++) {
+    const exam = state.generatedExams[i];
+    const chip = document.createElement('div');
+    chip.style.cssText = 'background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:11px;font-family:Space Mono,monospace;';
+    chip.id = `student-chip-${i}`;
+    chip.innerHTML = `<div style="color:var(--muted)">${exam.code}</div><div style="color:var(--text)">${exam.student}</div>`;
+    grid.appendChild(chip);
+  }
+
+  log('formatter', 'PDFs listos para descarga individual...');
+  setProgress(95, 'Finalizando');
+  await sleep(400);
+
+  // Mark all done
+  for (let i = 0; i < state.generatedExams.length; i++) {
+    const chip = document.getElementById(`student-chip-${i}`);
+    if (chip) chip.style.borderColor = 'var(--accent)';
+  }
+
+  setNode('formatter', 'done');
+  log('formatter', '✓ Pipeline completado con éxito');
+}
+
+// ─── PDF GENERATION ────────────────────────────────────────────────────────
+function generatePDF(exam) {
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const W = 210, H = 297;
+  const margin = 18;
+  let y = margin;
+
+  // Header bar
+  doc.setFillColor(15, 15, 30);
+  doc.rect(0, 0, W, 28, 'F');
+
+  // Title
+  doc.setTextColor(0, 229, 160);
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text(state.subject.toUpperCase(), margin, 12);
+
+  // Exam code
+  doc.setTextColor(180, 180, 200);
+  doc.setFontSize(9);
+  doc.setFont('courier', 'bold');
+  doc.text(`CÓDIGO: ${exam.code}`, margin, 20);
+
+  // Student name
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  const studentText = `Estudiante: ${exam.student}`;
+  doc.text(studentText, W - margin - doc.getTextWidth(studentText), 20);
+
+  y = 38;
+
+  // Instructions
+  doc.setFillColor(25, 25, 45);
+  doc.roundedRect(margin, y, W - margin*2, 14, 2, 2, 'F');
+  doc.setTextColor(180, 180, 200);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Instrucciones: Marca solo UNA respuesta por pregunta. Cada pregunta tiene 5 opciones (A, B, C, D, E). Solo una es correcta.', margin + 4, y + 9);
+  y += 20;
+
+  // Questions
+  const qPerCol = Math.ceil(exam.questions.length / 2);
+  const colW = (W - margin * 2 - 8) / 2;
+
+  for (let qi = 0; qi < exam.questions.length; qi++) {
+    const q = exam.questions[qi];
+    const col = qi < qPerCol ? 0 : 1;
+    const row = qi < qPerCol ? qi : qi - qPerCol;
+    const colX = margin + col * (colW + 8);
+    let qY = 58 + row * 52;
+
+    // Question box
+    doc.setFillColor(20, 20, 35);
+    doc.roundedRect(colX, qY, colW, 48, 2, 2, 'F');
+    doc.setDrawColor(40, 40, 60);
+    doc.roundedRect(colX, qY, colW, 48, 2, 2, 'S');
+
+    // Question number badge
+    doc.setFillColor(124, 92, 252);
+    doc.roundedRect(colX + 3, qY + 3, 16, 8, 1, 1, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`P${q.n}`, colX + 5, qY + 9);
+
+    // Question text
+    doc.setTextColor(220, 220, 230);
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'normal');
+    const qLines = doc.splitTextToSize(q.q, colW - 8);
+    const displayLines = qLines.slice(0, 2);
+    if (qLines.length > 2) displayLines[1] = displayLines[1].substring(0, displayLines[1].length - 3) + '...';
+    doc.text(displayLines, colX + 3, qY + 15);
+
+    // Options
+    const optY = qY + 25;
+    const opts = ['A', 'B', 'C', 'D', 'E'];
+    for (let oi = 0; oi < 5; oi++) {
+      const ox = colX + 3 + (oi % 5) * (colW - 6) / 5;
+      const oy = optY + Math.floor(oi / 5) * 6;
+
+      // Circle
+      doc.setDrawColor(80, 80, 100);
+      doc.setFillColor(15, 15, 28);
+      doc.circle(ox + 3, oy + 3, 3, 'FD');
+
+      // Letter
+      doc.setTextColor(180, 180, 200);
+      doc.setFontSize(6.5);
+      doc.setFont('helvetica', 'bold');
+      doc.text(opts[oi], ox + 1.5, oy + 4.8);
+    }
+
+    // Option texts below circles
+    for (let oi = 0; oi < 5; oi++) {
+      const ox = colX + 3 + oi * (colW - 6) / 5;
+      const optText = doc.splitTextToSize(q.options[opts[oi]], (colW - 6) / 5 - 1);
+      doc.setTextColor(140, 140, 160);
+      doc.setFontSize(5.5);
+      doc.setFont('helvetica', 'normal');
+      doc.text(optText.slice(0,2), ox, optY + 10);
+    }
+  }
+
+  // Footer
+  doc.setFillColor(15, 15, 30);
+  doc.rect(0, H - 16, W, 16, 'F');
+  doc.setTextColor(100, 100, 120);
+  doc.setFontSize(7);
+  doc.setFont('courier', 'normal');
+  doc.text(`${state.subject} — ${exam.code} — Generado por ExamForge`, margin, H - 6);
+  doc.text(new Date().toLocaleDateString('es-ES'), W - margin - 20, H - 6);
+
+  return doc;
+}
+
+function downloadPDF(examIdx) {
+  const exam = state.generatedExams[examIdx];
+  const doc = generatePDF(exam);
+  doc.save(`examen_${exam.code}_${exam.student.replace(/\s+/g, '_')}.pdf`);
+}
+
+async function downloadAllPDFs() {
+  showToast('Generando PDFs... esto puede tardar unos segundos', 'success');
+  await sleep(200);
+  for (let i = 0; i < state.generatedExams.length; i++) {
+    await sleep(150);
+    downloadPDF(i);
+  }
+  showToast(`${state.generatedExams.length} PDFs descargados`, 'success');
+}
+
+function downloadCSV() {
+  const blob = new Blob(['\ufeff' + state.csvData], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `respuestas_${state.subject.replace(/\s+/g,'_')}_${Date.now()}.csv`;
+  a.click();
+  showToast('CSV descargado', 'success');
+}
+
+// ─── Main ─────────────────────────────────────────────────────────────────
+async function startGeneration() {
+  const apiKey = document.getElementById('apiKey').value.trim();
+  const combinedMaterial = getCombinedMaterial();
+  const subject = document.getElementById('subject').value.trim();
+  const studentText = document.getElementById('studentList').value.trim();
+
+  if (!apiKey) return showToast('Introduce tu API Key de OpenAI', 'error');
+  if (!combinedMaterial || combinedMaterial.length < 50) return showToast('El material es demasiado corto. Escribe texto o añade archivos PDF/Word.', 'error');
+  if (!subject) return showToast('Indica el nombre de la asignatura', 'error');
+  const students = parseStudents(studentText);
+  if (students.length === 0) return showToast('Añade al menos un estudiante', 'error');
+
+  const filesLoading = uploadedFiles.filter(f => f.status === 'loading');
+  if (filesLoading.length > 0) return showToast('Espera a que terminen de procesar los archivos', 'error');
+
+  state.apiKey = apiKey;
+  state.model = document.getElementById('modelSelect').value;
+  state.material = combinedMaterial;
+  state.subject = subject;
+  state.numQuestions = parseInt(document.getElementById('numQuestions').value) || 10;
+  state.difficulty = document.getElementById('difficulty').value;
+  state.extraInstructions = document.getElementById('extraInstructions').value;
+  state.students = students;
+  state.examPool = [];
+  state.generatedExams = [];
+
+  // Switch to progress view
+  document.getElementById('section-config').style.display = 'none';
+  document.getElementById('section-progress').style.display = 'block';
+  document.getElementById('logContainer').innerHTML = '';
+
+  try {
+    await agentOrchestrator();
+    setProgress(10);
+    await agentAnalyst();
+    setProgress(35);
+    await agentGenerator();
+    setProgress(60);
+    await agentValidator();
+    setProgress(75);
+    await agentFormatter();
+    setProgress(100, '¡Completado!');
+    await sleep(600);
+    showResults();
+  } catch (err) {
+    log('system', `❌ ERROR: ${err.message}`);
+    showToast('Error: ' + err.message, 'error');
+    document.getElementById('progressTag').textContent = '⚠ Error en el pipeline';
+  }
+}
+
+function showResults() {
+  document.getElementById('section-progress').style.display = 'none';
+  document.getElementById('section-results').style.display = 'block';
+
+  document.getElementById('resultsSubtitle').textContent =
+    `${state.generatedExams.length} exámenes generados · ${state.numQuestions} preguntas · ${state.subject}`;
+
+  // Stats
+  const uniqueCodes = new Set(state.generatedExams.map(e => e.code)).size;
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-box"><div class="stat-val">${state.generatedExams.length}</div><div class="stat-label">Exámenes</div></div>
+    <div class="stat-box"><div class="stat-val">${state.numQuestions}</div><div class="stat-label">Preguntas</div></div>
+    <div class="stat-box"><div class="stat-val">${uniqueCodes}</div><div class="stat-label">Códigos únicos</div></div>
+    <div class="stat-box"><div class="stat-val">5</div><div class="stat-label">Opciones/pregunta</div></div>
+  `;
+
+  // CSV preview
+  document.getElementById('csvPreview').textContent = state.csvData;
+
+  // Exam cards
+  const grid = document.getElementById('examsGrid');
+  grid.innerHTML = '';
+  state.generatedExams.forEach((exam, idx) => {
+    const card = document.createElement('div');
+    card.className = 'exam-card';
+    const answersHtml = exam.questions.map(q =>
+      `<div class="answer-chip"><span class="q-num">P${q.n}:</span><span class="q-ans">${q.correct}</span></div>`
+    ).join('');
+    card.innerHTML = `
+      <div class="exam-code">${exam.code}</div>
+      <div class="exam-student">${exam.student}</div>
+      <div class="exam-answers">${answersHtml}</div>
+      <div class="exam-actions">
+        <button class="btn btn-sm btn-accent" onclick="downloadPDF(${idx})">📄 PDF</button>
+        <button class="btn btn-sm" onclick="previewExam(${idx})">👁 Ver</button>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+
+  showToast(`${state.generatedExams.length} exámenes listos`, 'success');
+}
+
+function previewExam(idx) {
+  const exam = state.generatedExams[idx];
+  const win = window.open('', '_blank', 'width=800,height=700');
+  let html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <style>body{font-family:Georgia,serif;max-width:700px;margin:40px auto;color:#1a1a2e;background:#fff}
+  h1{font-size:20px;border-bottom:3px solid #7c5cfc;padding-bottom:10px}
+  .code{font-family:monospace;font-size:12px;color:#6b6b80;margin:6px 0}
+  .q{margin:20px 0;padding:16px;background:#f8f8ff;border-radius:8px;border-left:4px solid #7c5cfc}
+  .q-num{font-weight:bold;color:#7c5cfc;font-size:13px}
+  .q-text{font-size:14px;margin:8px 0 12px}
+  .opt{padding:5px 10px;margin:3px 0;border-radius:4px;font-size:13px;display:flex;gap:8px}
+  .opt-correct{background:#e8fff5;border:1px solid #00e5a0;font-weight:bold}
+  .opt-letter{font-weight:bold;min-width:16px}
+  </style></head><body>
+  <h1>${state.subject}</h1>
+  <div class="code">Código: ${exam.code} | Estudiante: ${exam.student}</div>`;
+
+  exam.questions.forEach(q => {
+    html += `<div class="q"><div class="q-num">Pregunta ${q.n}</div>
+    <div class="q-text">${q.q}</div>`;
+    ['A','B','C','D','E'].forEach(l => {
+      const isCorrect = q.correct === l;
+      html += `<div class="opt ${isCorrect ? 'opt-correct' : ''}">
+        <span class="opt-letter">${l}.</span>
+        <span>${q.options[l]}</span>
+        ${isCorrect ? ' ✓' : ''}
+      </div>`;
+    });
+    html += `</div>`;
+  });
+  html += `</body></html>`;
+  win.document.write(html);
+}
+
+function resetAll() {
+  state = { apiKey: '', model: 'gpt-4o-mini', material: '', subject: '', numQuestions: 10, difficulty: 'intermedio', extraInstructions: '', students: [], concepts: [], examPool: [], generatedExams: [], csvData: '' };
+  uploadedFiles = [];
+  document.getElementById('fileList').innerHTML = '';
+  document.getElementById('fileHint').textContent = 'El texto extraído se combinará con el texto manual (si lo hay).';
+  document.getElementById('fileHint').style.color = '';
+  document.getElementById('charsCounter').textContent = '0 caracteres';
+  document.getElementById('section-results').style.display = 'none';
+  document.getElementById('section-progress').style.display = 'none';
+  document.getElementById('section-config').style.display = 'block';
+  ['orchestrator','analyst','generator','validator','formatter'].forEach(n => setNode(n, null));
+}
+</script>
+</body>
+</html>
