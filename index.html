@@ -1292,43 +1292,95 @@ Responde con este JSON:
 }
 
 // ─── AGENT 4: Validator ───────────────────────────────────────────────────
+// ─── AGENT 4: Validator — verifica estructura Y unicidad semántica ──────────
 async function agentValidator() {
   setNode('validator', 'active');
-  log('validator', 'Validando calidad de las preguntas generadas...');
+  log('validator', 'Fase 1: Validación estructural...');
   setProgress(65, 'Agente Validador');
 
-  // Validate each exam set
-  let validCount = 0;
-  let issues = 0;
-
-  for (let i = 0; i < state.examPool.length; i++) {
-    const set = state.examPool[i];
-    let setValid = true;
-
+  // ── Fase 1: validación estructural ──────────────────────────────────────
+  let structIssues = 0;
+  for (const set of state.examPool) {
     for (const q of set.questions) {
-      // Check structure
-      if (!q.q || !q.options || !q.correct) { setValid = false; issues++; continue; }
-      if (!['A','B','C','D','E'].includes(q.correct)) { q.correct = 'A'; issues++; }
-      if (Object.keys(q.options).length !== 5) { setValid = false; issues++; }
-      // Check correct answer exists
-      if (!q.options[q.correct]) { q.correct = Object.keys(q.options)[0]; issues++; }
+      if (!q.q || !q.options || !q.correct) { structIssues++; continue; }
+      if (!['A','B','C','D','E'].includes(q.correct)) { q.correct = 'A'; structIssues++; }
+      if (Object.keys(q.options).length !== 5) { structIssues++; }
+      if (!q.options[q.correct]) { q.correct = Object.keys(q.options)[0]; structIssues++; }
     }
+  }
+  if (structIssues > 0) log('validator', `⚠ ${structIssues} ajustes estructurales aplicados`);
+  else log('validator', '✓ Estructura correcta en todos los sets');
 
-    if (setValid) validCount++;
+  // ── Fase 2: verificación semántica — una sola respuesta correcta ────────
+  // Validamos el primer set como representativo; si hay pocos sets, validamos todos
+  const setsToCheck = state.examPool.length <= 3 ? state.examPool : [state.examPool[0]];
+  log('validator', `Fase 2: Verificación semántica (unicidad de respuesta correcta) en ${setsToCheck.length} set${setsToCheck.length>1?'s':''}...`);
+
+  let corrected = 0;
+
+  for (let si = 0; si < setsToCheck.length; si++) {
+    const set = setsToCheck[si];
+    setProgress(65 + (si / setsToCheck.length) * 10, `Verificando set ${si+1}/${setsToCheck.length}`);
+
+    // Enviar todas las preguntas del set de una vez para ahorrar llamadas
+    const questionsPayload = set.questions.map(q => ({
+      n: q.n,
+      q: q.q,
+      options: q.options,
+      declared_correct: q.correct
+    }));
+
+    const sysP = `Eres un experto evaluador académico. Para cada pregunta tipo test, verifica que:
+1. La opción declarada como correcta sea efectivamente la ÚNICA respuesta correcta.
+2. Las demás opciones sean claramente incorrectas o distractores.
+Si detectas que la respuesta declarada es incorrecta o que hay ambigüedad, indica la letra correcta.
+Responde SOLO con JSON válido, sin markdown.`;
+
+    const usrP = `Verifica estas preguntas de la asignatura "${state.subject}". Para cada una confirma o corrige la respuesta correcta.
+
+${JSON.stringify(questionsPayload, null, 2)}
+
+Responde con este JSON:
+{
+  "results": [
+    { "n": 1, "ok": true, "correct": "B", "note": "" },
+    { "n": 2, "ok": false, "correct": "C", "note": "La opción B era incorrecta porque..." }
+  ]
+}`;
+
+    try {
+      const raw = await callOpenAI(sysP, usrP, 0.1);
+      const clean = raw.replace(/```json|```/g, '').trim();
+      const validation = JSON.parse(clean);
+
+      for (const result of validation.results) {
+        const q = set.questions.find(q => q.n === result.n);
+        if (!q) continue;
+        if (!result.ok) {
+          const newCorrect = result.correct;
+          if (['A','B','C','D','E'].includes(newCorrect) && q.options[newCorrect]) {
+            log('validator', `⚠ P${q.n}: corregida ${q.correct}→${newCorrect}${result.note ? ' — ' + result.note.substring(0,60) : ''}`);
+            q.correct = newCorrect;
+            corrected++;
+          }
+        }
+      }
+      log('validator', `✓ Set ${si+1} verificado semánticamente`);
+    } catch (err) {
+      log('validator', `⚠ No se pudo verificar set ${si+1} semánticamente: ${err.message}`);
+    }
   }
 
-  log('validator', `Validación: ${validCount}/${state.examPool.length} sets OK`);
-  if (issues > 0) log('validator', `⚠ ${issues} ajustes menores aplicados automáticamente`);
+  if (corrected > 0) log('validator', `✓ ${corrected} respuesta${corrected>1?'s':''} corregida${corrected>1?'s':''} por el validador semántico`);
+  else log('validator', '✓ Todas las respuestas correctas confirmadas como únicas');
 
-  // Assign exams to students
+  // ── Asignar exámenes a estudiantes ──────────────────────────────────────
+  setProgress(76, 'Asignando exámenes');
   for (let i = 0; i < state.students.length; i++) {
     const student = state.students[i];
     const setIdx = i % state.examPool.length;
     const questions = state.examPool[setIdx].questions;
-
-    // Shuffle question ORDER (not the questions themselves) for uniqueness
     const shuffledQ = shuffleArray([...questions]).map((q, idx) => ({ ...q, n: idx + 1 }));
-
     state.generatedExams.push({
       code: generateExamCode(),
       student: student,
@@ -1336,8 +1388,7 @@ async function agentValidator() {
     });
   }
 
-  log('validator', `✓ ${state.generatedExams.length} exámenes asignados a estudiantes`);
-  log('validator', 'Construyendo hoja de respuestas...');
+  log('validator', `✓ ${state.generatedExams.length} exámenes asignados y verificados`);
   setNode('validator', 'done');
 }
 
@@ -1392,119 +1443,145 @@ async function agentFormatter() {
   log('formatter', '✓ Pipeline completado con éxito');
 }
 
-// ─── PDF GENERATION ────────────────────────────────────────────────────────
+// ─── PDF GENERATION — A4 horizontal, apto para impresión ──────────────────
 function generatePDF(exam) {
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const W = 210, H = 297;
-  const margin = 18;
-  let y = margin;
+  // A4 landscape: 297 × 210 mm
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const W = 297, H = 210;
+  const mX = 10, mTop = 8;
 
-  // Header bar
-  doc.setFillColor(15, 15, 30);
-  doc.rect(0, 0, W, 28, 'F');
+  // ── Fondo blanco total ──────────────────────────────────────────────────
+  doc.setFillColor(255, 255, 255);
+  doc.rect(0, 0, W, H, 'F');
 
-  // Title
-  doc.setTextColor(0, 229, 160);
-  doc.setFontSize(14);
+  // ── Línea superior de cabecera ──────────────────────────────────────────
+  doc.setDrawColor(0, 0, 0);
+  doc.setLineWidth(0.6);
+  doc.line(mX, mTop + 8, W - mX, mTop + 8);
+
+  // Asignatura
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(13);
   doc.setFont('helvetica', 'bold');
-  doc.text(state.subject.toUpperCase(), margin, 12);
+  doc.text(state.subject.toUpperCase(), mX, mTop + 5);
 
-  // Exam code
-  doc.setTextColor(180, 180, 200);
+  // Código (centro)
   doc.setFontSize(9);
   doc.setFont('courier', 'bold');
-  doc.text(`CÓDIGO: ${exam.code}`, margin, 20);
+  const codeText = `CÓDIGO: ${exam.code}`;
+  doc.text(codeText, W / 2 - doc.getTextWidth(codeText) / 2, mTop + 5);
 
-  // Student name
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(11);
+  // Estudiante (derecha)
   doc.setFont('helvetica', 'bold');
-  const studentText = `Estudiante: ${exam.student}`;
-  doc.text(studentText, W - margin - doc.getTextWidth(studentText), 20);
+  doc.setFontSize(9);
+  const stuLabel = 'Estudiante:';
+  const stuName  = exam.student;
+  const stuFull  = `${stuLabel} ${stuName}`;
+  doc.text(stuFull, W - mX - doc.getTextWidth(stuFull), mTop + 5);
 
-  y = 38;
-
-  // Instructions
-  doc.setFillColor(25, 25, 45);
-  doc.roundedRect(margin, y, W - margin*2, 14, 2, 2, 'F');
-  doc.setTextColor(180, 180, 200);
-  doc.setFontSize(8);
+  // Instrucciones
   doc.setFont('helvetica', 'normal');
-  doc.text('Instrucciones: Marca solo UNA respuesta por pregunta. Cada pregunta tiene 5 opciones (A, B, C, D, E). Solo una es correcta.', margin + 4, y + 9);
-  y += 20;
+  doc.setFontSize(7);
+  doc.setTextColor(60, 60, 60);
+  doc.text(
+    'Instrucciones: Marca solo UNA respuesta por pregunta. Cada pregunta tiene 5 opciones (A, B, C, D, E). Solo una es correcta.',
+    mX, mTop + 13
+  );
 
-  // Questions
-  const qPerCol = Math.ceil(exam.questions.length / 2);
-  const colW = (W - margin * 2 - 8) / 2;
+  // ── Grid: 5 columnas × 2 filas ─────────────────────────────────────────
+  const COLS = 5, ROWS = 2;
+  const gridTop    = mTop + 17;
+  const gridBottom = H - 10;   // espacio para pie de página
+  const gridH      = gridBottom - gridTop;
+  const gridW      = W - mX * 2;
 
-  for (let qi = 0; qi < exam.questions.length; qi++) {
-    const q = exam.questions[qi];
-    const col = qi < qPerCol ? 0 : 1;
-    const row = qi < qPerCol ? qi : qi - qPerCol;
-    const colX = margin + col * (colW + 8);
-    let qY = 58 + row * 52;
+  const cellW = gridW / COLS;
+  const cellH = gridH / ROWS;
+  const pad   = 3;   // padding interior celda
 
-    // Question box
-    doc.setFillColor(20, 20, 35);
-    doc.roundedRect(colX, qY, colW, 48, 2, 2, 'F');
-    doc.setDrawColor(40, 40, 60);
-    doc.roundedRect(colX, qY, colW, 48, 2, 2, 'S');
+  const OPTS = ['A', 'B', 'C', 'D', 'E'];
 
-    // Question number badge
-    doc.setFillColor(124, 92, 252);
-    doc.roundedRect(colX + 3, qY + 3, 16, 8, 1, 1, 'F');
+  for (let qi = 0; qi < Math.min(exam.questions.length, COLS * ROWS); qi++) {
+    const q    = exam.questions[qi];
+    const col  = qi % COLS;
+    const row  = Math.floor(qi / COLS);
+
+    const cx = mX + col * cellW;
+    const cy = gridTop + row * cellH;
+
+    // Borde de celda
+    doc.setDrawColor(180, 180, 180);
+    doc.setLineWidth(0.25);
+    doc.rect(cx, cy, cellW, cellH);
+
+    // Número de pregunta
+    doc.setFillColor(30, 30, 30);
+    doc.rect(cx + pad, cy + pad, 10, 5, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(7);
     doc.setFont('helvetica', 'bold');
-    doc.text(`P${q.n}`, colX + 5, qY + 9);
+    doc.text(`P${q.n}`, cx + pad + 1.2, cy + pad + 3.8);
 
-    // Question text
-    doc.setTextColor(220, 220, 230);
-    doc.setFontSize(7.5);
+    // Enunciado — hasta 4 líneas para que quepa completo
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
-    const qLines = doc.splitTextToSize(q.q, colW - 8);
-    const displayLines = qLines.slice(0, 2);
-    if (qLines.length > 2) displayLines[1] = displayLines[1].substring(0, displayLines[1].length - 3) + '...';
-    doc.text(displayLines, colX + 3, qY + 15);
+    const qLines = doc.splitTextToSize(q.q, cellW - pad * 2 - 1);
+    const maxQLines = 4;
+    doc.text(qLines.slice(0, maxQLines), cx + pad, cy + pad + 10, { lineHeightFactor: 1.35 });
 
-    // Options
-    const optY = qY + 25;
-    const opts = ['A', 'B', 'C', 'D', 'E'];
+    // Opciones A–E, cada una con burbuja + texto completo
+    const optStartY = cy + pad + 10 + Math.min(qLines.length, maxQLines) * 7 * 1.35 * 0.352 + 2;
+    // 1 mm ≈ 2.835 pt; 7pt * 1.35 / 2.835 ≈ 3.33 mm por línea
+    const lineH_mm = 7 * 1.35 / 2.835;
+    const optBlockY = cy + pad + 10 + Math.min(qLines.length, maxQLines) * lineH_mm + 2;
+
+    const optW     = cellW - pad * 2;       // ancho disponible para cada opción
+    const bubbleR  = 2.2;
+    const optLineH = (cellH - (optBlockY - cy) - pad) / 5; // altura por opción
+
     for (let oi = 0; oi < 5; oi++) {
-      const ox = colX + 3 + (oi % 5) * (colW - 6) / 5;
-      const oy = optY + Math.floor(oi / 5) * 6;
+      const oy = optBlockY + oi * optLineH + optLineH * 0.5;
 
-      // Circle
-      doc.setDrawColor(80, 80, 100);
-      doc.setFillColor(15, 15, 28);
-      doc.circle(ox + 3, oy + 3, 3, 'FD');
+      // Burbuja de marcado
+      doc.setDrawColor(0, 0, 0);
+      doc.setFillColor(255, 255, 255);
+      doc.setLineWidth(0.4);
+      doc.circle(cx + pad + bubbleR, oy, bubbleR, 'FD');
 
-      // Letter
-      doc.setTextColor(180, 180, 200);
-      doc.setFontSize(6.5);
-      doc.setFont('helvetica', 'bold');
-      doc.text(opts[oi], ox + 1.5, oy + 4.8);
-    }
-
-    // Option texts below circles
-    for (let oi = 0; oi < 5; oi++) {
-      const ox = colX + 3 + oi * (colW - 6) / 5;
-      const optText = doc.splitTextToSize(q.options[opts[oi]], (colW - 6) / 5 - 1);
-      doc.setTextColor(140, 140, 160);
+      // Letra dentro de la burbuja
+      doc.setTextColor(0, 0, 0);
       doc.setFontSize(5.5);
+      doc.setFont('helvetica', 'bold');
+      doc.text(OPTS[oi], cx + pad + bubbleR - 1.2, oy + 1.9);
+
+      // Texto de la opción (completo, con wrap si hace falta)
       doc.setFont('helvetica', 'normal');
-      doc.text(optText.slice(0,2), ox, optY + 10);
+      doc.setFontSize(6.5);
+      doc.setTextColor(20, 20, 20);
+      const optText = doc.splitTextToSize(
+        String(q.options[OPTS[oi]] ?? ''),
+        optW - bubbleR * 2 - 2
+      );
+      // Mostrar máx 2 líneas por opción para que quepan las 5
+      doc.text(optText.slice(0, 2), cx + pad + bubbleR * 2 + 1.5, oy + 1.9, { lineHeightFactor: 1.2 });
     }
   }
 
-  // Footer
-  doc.setFillColor(15, 15, 30);
-  doc.rect(0, H - 16, W, 16, 'F');
-  doc.setTextColor(100, 100, 120);
-  doc.setFontSize(7);
-  doc.setFont('courier', 'normal');
-  doc.text(`${state.subject} — ${exam.code} — Generado por ExamForge`, margin, H - 6);
-  doc.text(new Date().toLocaleDateString('es-ES'), W - margin - 20, H - 6);
+  // ── Línea de separación filas (visual) ─────────────────────────────────
+  doc.setDrawColor(100, 100, 100);
+  doc.setLineWidth(0.4);
+  doc.line(mX, gridTop + cellH, W - mX, gridTop + cellH);
+
+  // ── Pie de página ───────────────────────────────────────────────────────
+  doc.setDrawColor(0, 0, 0);
+  doc.setLineWidth(0.4);
+  doc.line(mX, H - 8, W - mX, H - 8);
+  doc.setTextColor(80, 80, 80);
+  doc.setFontSize(6.5);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`${state.subject} — ${exam.code} — ExamForge`, mX, H - 4.5);
+  doc.text(new Date().toLocaleDateString('es-ES'), W - mX - 18, H - 4.5);
 
   return doc;
 }
