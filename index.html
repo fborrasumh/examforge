@@ -810,7 +810,7 @@ Los productos son glucosa y oxígeno..."></textarea>
               <option value="40">40 preguntas — 4 páginas</option>
               <option value="50">50 preguntas — 5 páginas</option>
             </select>
-            <p class="hint" id="qHint">1 hoja A4 horizontal · 5 col × 2 filas</p>
+            <p class="hint" id="qHint">A4 vertical · 2 columnas · casillas para lectura automática</p>
           </div>
         </div>
         <div style="margin-top:12px">
@@ -934,7 +934,6 @@ Pablo Jiménez"></textarea>
         <button class="btn btn-sm btn-accent" onclick="downloadPDFUnico()">📄 PDF para imprimir (todos)</button>
         <button class="btn btn-sm btn-accent" onclick="downloadPlantillaOMR()">🧩 plantilla_omr.json</button>
         <button class="btn btn-sm" onclick="abrirCorrector()">✅ Corregir escaneos</button>
-        <button class="btn btn-sm" onclick="downloadAllPDFs()">📄 PDFs sueltos</button>
         <button class="btn btn-sm" onclick="resetAll()" style="color:var(--muted)">↺ Nueva sesión</button>
       </div>
     </div>
@@ -1917,9 +1916,11 @@ function getCombinedMaterial() {
 // ─── Helpers ───────────────────────────────────────────────────────────────
 function updateQHint() {
   const n = parseInt(document.getElementById('numQuestions').value);
-  const pages = n / 10;
+  // el numero de hojas depende de lo largos que salgan los enunciados: las
+  // preguntas fluyen por las dos columnas y saltan de hoja cuando no caben
+  const aprox = n <= 10 ? '1 hoja' : (n <= 20 ? '1 o 2 hojas' : '2 o 3 hojas');
   document.getElementById('qHint').textContent =
-    `${pages} hoja${pages > 1 ? 's' : ''} A4 horizontal · 5 col × 2 filas`;
+    `${aprox} A4 vertical · 2 columnas · casillas para lectura automática`;
 }
 
 function generateExamCode() {
@@ -2340,7 +2341,7 @@ async function agentFormatter() {
     grid.appendChild(chip);
   }
 
-  log('formatter', 'PDFs listos para descarga individual...');
+  log('formatter', 'Hojas listas: descarga el PDF completo y la plantilla OMR...');
   setProgress(95, 'Finalizando');
   await sleep(400);
 
@@ -2354,166 +2355,16 @@ async function agentFormatter() {
   log('formatter', '✓ Pipeline completado con éxito');
 }
 
-// ─── PDF GENERATION — A4 horizontal, multipágina (10 preguntas/página) ────
-function renderPage(doc, exam, pageQuestions, pageNum, totalPages) {
-  const W = 297, H = 210;
-  const mX = 10, mTop = 8;
-
-  // Fondo blanco
-  doc.setFillColor(255, 255, 255);
-  doc.rect(0, 0, W, H, 'F');
-
-  // ── Cabecera ───────────────────────────────────────────────────────────
-  doc.setDrawColor(0, 0, 0);
-  doc.setLineWidth(0.6);
-  doc.line(mX, mTop + 8, W - mX, mTop + 8);
-
-  doc.setTextColor(0, 0, 0);
-  doc.setFontSize(13);
-  doc.setFont('helvetica', 'bold');
-  doc.text(state.subject.toUpperCase(), mX, mTop + 5);
-
-  doc.setFontSize(9);
-  doc.setFont('courier', 'bold');
-  const codeText = `CÓDIGO: ${exam.code}`;
-  doc.text(codeText, W / 2 - doc.getTextWidth(codeText) / 2, mTop + 5);
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  const stuFull = `Estudiante: ${exam.student}`;
-  doc.text(stuFull, W - mX - doc.getTextWidth(stuFull), mTop + 5);
-
-  // Instrucciones (solo en página 1)
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7);
-  doc.setTextColor(60, 60, 60);
-  if (pageNum === 1) {
-    doc.text(
-      'Instrucciones: Marca solo UNA respuesta por pregunta. Cada pregunta tiene 5 opciones (A, B, C, D, E). Solo una es correcta.',
-      mX, mTop + 13
-    );
-  } else {
-    doc.text(`Continuación — Página ${pageNum} de ${totalPages}`, mX, mTop + 13);
-  }
-
-  // ── Grid: 5 col × 2 filas ─────────────────────────────────────────────
-  const COLS = 5, ROWS = 2;
-  const gridTop    = mTop + 17;
-  const gridBottom = H - 10;
-  const gridH      = gridBottom - gridTop;
-  const gridW      = W - mX * 2;
-  const cellW      = gridW / COLS;
-  const cellH      = gridH / ROWS;
-  const pad        = 3;
-  const OPTS       = ['A', 'B', 'C', 'D', 'E'];
-
-  for (let qi = 0; qi < Math.min(pageQuestions.length, 10); qi++) {
-    const q   = pageQuestions[qi];
-    const col = qi % COLS;
-    const row = Math.floor(qi / COLS);
-    const cx  = mX + col * cellW;
-    const cy  = gridTop + row * cellH;
-
-    // Borde celda
-    doc.setDrawColor(180, 180, 180);
-    doc.setLineWidth(0.25);
-    doc.rect(cx, cy, cellW, cellH);
-
-    // Badge número — fondo blanco, borde negro
-    doc.setFillColor(255, 255, 255);
-    doc.setDrawColor(0, 0, 0);
-    doc.setLineWidth(0.5);
-    doc.rect(cx + pad, cy + pad, 10, 5, 'FD');
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`P${q.n}`, cx + pad + 1.2, cy + pad + 3.8);
-
-    // Enunciado
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'normal');
-    const qLines  = doc.splitTextToSize(q.q, cellW - pad * 2 - 1);
-    const maxQLns = 4;
-    doc.text(qLines.slice(0, maxQLns), cx + pad, cy + pad + 10, { lineHeightFactor: 1.35 });
-
-    // Opciones
-    const lineH_mm  = 7 * 1.35 / 2.835;
-    const optBlockY = cy + pad + 10 + Math.min(qLines.length, maxQLns) * lineH_mm + 2;
-    const optW      = cellW - pad * 2;
-    const bubbleR   = 2.2;
-    const optLineH  = (cellH - (optBlockY - cy) - pad) / 5;
-
-    for (let oi = 0; oi < 5; oi++) {
-      const oy     = optBlockY + oi * optLineH + optLineH * 0.5;
-      const bx     = cx + pad + bubbleR;
-
-      doc.setDrawColor(0, 0, 0);
-      doc.setFillColor(255, 255, 255);
-      doc.setLineWidth(0.4);
-      doc.circle(bx, oy, bubbleR, 'FD');
-
-      doc.setTextColor(0, 0, 0);
-      doc.setFontSize(5.5);
-      doc.setFont('helvetica', 'bold');
-      const letter = OPTS[oi];
-      const lw   = doc.getTextWidth(letter);
-      const capH = 5.5 * 0.352 * 0.72;
-      doc.text(letter, bx - lw / 2, oy + capH / 2);
-
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(6.5);
-      doc.setTextColor(20, 20, 20);
-      const optText = doc.splitTextToSize(String(q.options[OPTS[oi]] ?? ''), optW - bubbleR * 2 - 2);
-      doc.text(optText.slice(0, 2), cx + pad + bubbleR * 2 + 1.5, oy + capH / 2, { lineHeightFactor: 1.2 });
-    }
-  }
-
-  // Línea separadora filas
-  doc.setDrawColor(100, 100, 100);
-  doc.setLineWidth(0.4);
-  doc.line(mX, gridTop + cellH, W - mX, gridTop + cellH);
-
-  // Pie de página
-  doc.setDrawColor(0, 0, 0);
-  doc.setLineWidth(0.4);
-  doc.line(mX, H - 8, W - mX, H - 8);
-  doc.setTextColor(80, 80, 80);
-  doc.setFontSize(6.5);
-  doc.setFont('helvetica', 'normal');
-  doc.text(`${state.subject} — ${exam.code} — ExamForge`, mX, H - 4.5);
-  const pageInfo = totalPages > 1 ? `Pág. ${pageNum}/${totalPages} · ` : '';
-  doc.text(pageInfo + new Date().toLocaleDateString('es-ES'), W - mX - (totalPages > 1 ? 36 : 18), H - 4.5);
-}
-
-function generatePDF(exam) {
-  const Q_PER_PAGE = 10;
-  const totalPages = Math.ceil(exam.questions.length / Q_PER_PAGE);
-  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-
-  for (let p = 0; p < totalPages; p++) {
-    if (p > 0) doc.addPage('a4', 'landscape');
-    const pageQuestions = exam.questions.slice(p * Q_PER_PAGE, (p + 1) * Q_PER_PAGE);
-    renderPage(doc, exam, pageQuestions, p + 1, totalPages);
-  }
-
-  return doc;
-}
-
+// ─── PDF de un examen suelto (mismo formato OMR que el PDF completo) ──────
 function downloadPDF(examIdx) {
   const exam = state.generatedExams[examIdx];
-  const doc = generatePDF(exam);
-  doc.save(`examen_${exam.code}_${exam.student.replace(/\s+/g, '_')}.pdf`);
-}
-
-async function downloadAllPDFs() {
-  showToast('Generando PDFs... esto puede tardar unos segundos', 'success');
-  await sleep(200);
-  for (let i = 0; i < state.generatedExams.length; i++) {
-    await sleep(150);
-    downloadPDF(i);
-  }
-  showToast(`${state.generatedExams.length} PDFs descargados`, 'success');
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  // se conserva el numero de version: la plantilla ya descargada sigue valiendo
+  renderExamOMR(doc, exam, { asignatura: state.subject,
+    titulo: 'Evaluacion tipo test' }, examIdx + 1);
+  doc.save(`examen_v${String(examIdx + 1).padStart(3, '0')}_${exam.code}.pdf`);
+  showToast('Reimpresión de la versión ' + (examIdx + 1)
+    + ': usa la misma plantilla JSON para corregirla', 'success');
 }
 
 function downloadCSV() {
@@ -2867,7 +2718,7 @@ function showResults() {
       <div class="exam-student">${exam.student}</div>
       <div class="exam-answers">${answersHtml}</div>
       <div class="exam-actions">
-        <button class="btn btn-sm btn-accent" onclick="downloadPDF(${idx})">📄 PDF</button>
+        <button class="btn btn-sm btn-accent" onclick="downloadPDF(${idx})">📄 Reimprimir hoja</button>
         <button class="btn btn-sm" onclick="previewExam(${idx})">👁 Ver</button>
       </div>
     `;
