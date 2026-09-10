@@ -744,10 +744,18 @@
           <div style="min-width:200px">
             <label for="modelSelect">Modelo</label>
             <select id="modelSelect" onchange="updateCostEstimate()">
-              <option value="gpt-4o-mini">GPT-4o Mini (rápido)</option>
-              <option value="gpt-4o">GPT-4o (preciso)</option>
-              <option value="gpt-4-turbo">GPT-4 Turbo</option>
+              <optgroup label="GPT-5.6 — más capacidad de razonamiento">
+                <option value="gpt-5.6">GPT-5.6 (preguntas más elaboradas)</option>
+                <option value="gpt-5.6-mini">GPT-5.6 Mini (equilibrado)</option>
+                <option value="gpt-5.6-nano">GPT-5.6 Nano (rápido y barato)</option>
+              </optgroup>
+              <optgroup label="GPT-4">
+                <option value="gpt-4o-mini" selected>GPT-4o Mini (rápido)</option>
+                <option value="gpt-4o">GPT-4o (preciso)</option>
+                <option value="gpt-4-turbo">GPT-4 Turbo</option>
+              </optgroup>
             </select>
+            <p class="hint" id="modelHint" style="margin-top:6px"></p>
           </div>
         </div>
         <p class="hint" id="apikey-hint">🔒 La clave se guarda en tu navegador (localStorage) y nunca sale de él.</p>
@@ -1678,8 +1686,22 @@ function clearFieldError(fieldId) {
 
 // ─── Cost & time estimation ──────────────────────────────────────────────────
 // Token pricing (input) per 1M tokens, approximate:
-const MODEL_PRICE = { 'gpt-4o-mini': 0.15, 'gpt-4o': 5.00, 'gpt-4-turbo': 10.00 };
-const MODEL_SPEED = { 'gpt-4o-mini': 8,    'gpt-4o': 3,     'gpt-4-turbo': 2 };  // calls/min approx
+const MODEL_PRICE = { 'gpt-4o-mini': 0.15, 'gpt-4o': 5.00, 'gpt-4-turbo': 10.00,
+                      'gpt-5.6-nano': 0.20, 'gpt-5.6-mini': 1.00, 'gpt-5.6': 6.00 };
+const MODEL_SPEED = { 'gpt-4o-mini': 8,    'gpt-4o': 3,     'gpt-4-turbo': 2,
+                      'gpt-5.6-nano': 6,   'gpt-5.6-mini': 3, 'gpt-5.6': 2 };  // calls/min approx
+
+/* Los modelos de la familia GPT-5.6 razonan antes de responder y solo
+ * admiten temperature = 1: cualquier otro valor lo rechaza la API. Aqui se
+ * fija en la propia llamada, para que el resto del codigo pueda seguir
+ * pidiendo la temperatura que quiera sin romper nada. */
+function esModeloRazonador(modelo) {
+  return /^gpt-5/.test(modelo || '');
+}
+
+function temperaturaValida(modelo, pedida) {
+  return esModeloRazonador(modelo) ? 1 : pedida;
+}
 
 function updateCostEstimate() {
   const material  = document.getElementById('material').value;
@@ -1687,6 +1709,14 @@ function updateCostEstimate() {
   const nQ        = parseInt(document.getElementById('numQuestions').value) || 10;
   const model     = document.getElementById('modelSelect').value;
   const students  = parseStudents(stuText).length;
+
+  const avisoModelo = document.getElementById('modelHint');
+  if (avisoModelo) {
+    avisoModelo.textContent = esModeloRazonador(model)
+      ? 'Modelo con razonamiento: tarda más por pregunta y trabaja siempre a '
+        + 'temperatura 1 (la API no admite otro valor).'
+      : '';
+  }
 
   if (students === 0) {
     document.getElementById('costEstimate').style.display = 'none';
@@ -1988,7 +2018,7 @@ async function callOpenAI(systemPrompt, userPrompt, temperature = 0.7) {
     },
     body: JSON.stringify({
       model: state.model,
-      temperature,
+      temperature: temperaturaValida(state.model, temperature),
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
