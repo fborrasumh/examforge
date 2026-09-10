@@ -546,6 +546,9 @@
   .toast.error   { border-color: var(--danger); }
 
   /* CSV preview */
+  #omrTabla table th { border-bottom: 1px solid var(--border); padding: 4px 6px; color: var(--muted); font-weight: 600; }
+  #omrTabla table td { border-bottom: 1px solid var(--border); padding: 4px 6px; }
+  #omrTabla { max-height: 60vh; overflow: auto; }
   .csv-preview {
     background: var(--surface2);
     border: 1px solid var(--border);
@@ -852,7 +855,11 @@ Pablo Jiménez"></textarea>
       </div>
     </div>
 
-    <button class="btn btn-primary" id="btnGenerate" onclick="startGeneration()">
+    <div style="text-align:center;margin:8px 0 18px">
+    <button class="btn btn-sm" onclick="abrirCorrector()">✅ Ya tengo exámenes hechos: corregir escaneos</button>
+  </div>
+
+  <button class="btn btn-primary" id="btnGenerate" onclick="startGeneration()">
       <span id="btnIcon">⚡</span> <span id="btnText">Iniciar Pipeline Multiagente</span>
     </button>
   </div>
@@ -924,7 +931,10 @@ Pablo Jiménez"></textarea>
       </div>
       <div class="results-actions">
         <button class="btn btn-sm btn-accent" onclick="downloadCSV()">⬇ Descargar CSV</button>
-        <button class="btn btn-sm" onclick="downloadAllPDFs()">📄 Descargar todos los PDFs</button>
+        <button class="btn btn-sm btn-accent" onclick="downloadPDFUnico()">📄 PDF para imprimir (todos)</button>
+        <button class="btn btn-sm btn-accent" onclick="downloadPlantillaOMR()">🧩 plantilla_omr.json</button>
+        <button class="btn btn-sm" onclick="abrirCorrector()">✅ Corregir escaneos</button>
+        <button class="btn btn-sm" onclick="downloadAllPDFs()">📄 PDFs sueltos</button>
         <button class="btn btn-sm" onclick="resetAll()" style="color:var(--muted)">↺ Nueva sesión</button>
       </div>
     </div>
@@ -939,7 +949,641 @@ Pablo Jiménez"></textarea>
     <div class="exams-grid" id="examsGrid"></div>
   </div>
 
+  <!-- ─── Corrección OMR ─────────────────────────────────────────────── -->
+  <div id="section-correccion" style="display:none">
+    <div class="card card-full" style="margin-bottom:20px">
+      <div class="card-title"><span class="icon icon-green">✅</span> Corrección automática de exámenes escaneados</div>
+      <p class="hint">Sube la <strong>plantilla_omr.json</strong> que se descargó al generar los exámenes y el <strong>PDF escaneado</strong> (o las imágenes) de las hojas contestadas. Se leen las marcas de registro de las esquinas, el código de barras del pie identifica la versión y la página, y se mide la tinta de cada casilla.</p>
+
+      <div class="field" style="margin-top:14px">
+        <label>1 · Plantilla del examen (JSON)</label>
+        <input type="file" id="omrPlantilla" accept=".json" onchange="cargarPlantillaOMR(event)" />
+        <p class="hint" id="omrPlantillaInfo">Ninguna plantilla cargada.</p>
+      </div>
+
+      <div class="field" style="margin-top:14px">
+        <label>2 · Hojas escaneadas (PDF o imágenes)</label>
+        <input type="file" id="omrEscaneos" accept=".pdf,.png,.jpg,.jpeg" multiple />
+        <p class="hint">Escanea a 200–300 ppp, en gris o color. No hace falta que las hojas estén rectas.</p>
+      </div>
+
+      <div class="field" style="margin-top:14px">
+        <label>3 · Penalización por respuesta errónea</label>
+        <select id="omrPenaliza">
+          <option value="0">Sin penalización</option>
+          <option value="0.25">0,25 puntos por fallo</option>
+          <option value="0.33">1/3 de punto por fallo</option>
+        </select>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap">
+        <button class="btn btn-primary" id="btnCorregir" onclick="corregirEscaneos()">Corregir</button>
+        <button class="btn btn-sm" onclick="cerrarCorrector()" style="color:var(--muted)">← Volver</button>
+      </div>
+
+      <div style="margin-top:16px;display:none" id="omrProgressWrap">
+        <div class="progress-bar"><div class="progress-fill" id="omrProgress" style="width:0%"></div></div>
+        <p class="hint" id="omrEstado"></p>
+      </div>
+    </div>
+
+    <div class="card card-full" id="omrResultados" style="display:none">
+      <div class="card-title"><span class="icon icon-green">📊</span> Notas</div>
+      <div class="results-actions" style="margin-bottom:12px">
+        <button class="btn btn-sm btn-accent" onclick="descargarNotas()">⬇ Descargar notas (CSV)</button>
+      </div>
+      <div class="csv-preview" id="omrTabla"></div>
+    </div>
+  </div>
+
 </main>
+
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════
+   Módulo OMR de ExamForge: generación de hojas con casillas y corrección
+   de los escaneos. Sin dependencias más allá de jsPDF y pdf.js, que ya
+   estaban en la página.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* Generador de hojas de examen con casillas legibles por OMR (jsPDF).
+ *
+ * Dibuja el examen en A4 vertical a dos columnas, con:
+ *   - un cuadrado delante de cada opcion, para que el estudiante lo rellene;
+ *   - cuatro marcas de registro en las esquinas, que dan la referencia
+ *     geometrica al corrector;
+ *   - dos tiras de 10 bits en el pie que codifican el numero de version.
+ *
+ * Ademas devuelve las coordenadas exactas de cada casilla en puntos PDF con
+ * origen abajo a la izquierda, que es lo que consume el modulo de correccion.
+ */
+
+const MM = 72 / 25.4;                 // 1 mm en puntos PDF
+const OMR = {
+  lado: 3.2,          // lado del cuadrado que rellena el estudiante (mm)
+  sangria: 6.0,       // hueco a la izquierda del texto de la opcion (mm)
+  marca: 4.5,         // lado de las marcas de registro (mm)
+  margenMarca: 10,    // distancia de las marcas al borde (mm)
+  bits: 12,           // 10 bits de version + 2 de numero de pagina
+  ladoBit: 4.0,
+  margenLateral: 13,
+  separacion: 6,
+  top: 21,
+  fuenteEnun: 8.3,
+  fuenteOpc: 8.4,
+  interlineadoEnun: 3.5,
+  interlineadoOpc: 4.2
+};
+
+const LETRAS = ['A', 'B', 'C', 'D', 'E'];
+
+/* Toda la geometria OMR se define en milimetros con el origen ABAJO a la
+ * izquierda, igual que el PDF y que la plantilla JSON. Al dibujar con jsPDF,
+ * que mide desde arriba, se convierte con dib(y) = H - y. */
+
+function posicionesMarcas(W, H) {
+  const d = OMR.margenMarca + OMR.marca / 2;
+  return [[d, d], [W - d, d], [W - d, H - d], [d, H - d]]; // II, ID, SD, SI
+}
+
+function posicionesBits(W, cual) {
+  const paso = OMR.ladoBit + 1.8;
+  const y = OMR.margenMarca + OMR.marca / 2;   // desde abajo
+  const x0 = cual === 0
+    ? OMR.margenMarca + OMR.marca + 5
+    : W - OMR.margenMarca - OMR.marca - 5 - OMR.bits * paso;
+  const out = [];
+  for (let i = 0; i < OMR.bits; i++) out.push([x0 + i * paso + OMR.ladoBit / 2, y]);
+  return out;
+}
+
+/** Codigo impreso: 10 bits de version y 2 de pagina dentro del examen. */
+function bitsDeVersion(v, pagina) {
+  const codigo = (v << 2) | (pagina & 3);
+  const out = [];
+  for (let i = OMR.bits - 1; i >= 0; i--) out.push((codigo >> i) & 1);
+  return out;
+}
+
+/** Dibuja cabecera, marcas y tira de bits. Todo en negro sobre blanco. */
+function decoracion(doc, exam, opciones, version, pagina) {
+  const W = doc.internal.pageSize.getWidth();
+  const H = doc.internal.pageSize.getHeight();
+
+  doc.setTextColor(0, 0, 0);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.text((opciones.asignatura || '').toUpperCase(), 21, H - (H - 9.5));
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.text(opciones.titulo || '', 21, 15.5);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10.5);
+  doc.text(`Version: ${String(version).padStart(3, '0')}    CODIGO: ${exam.code}`,
+    W - 21, 9.5, { align: 'right' });
+
+  // hueco para el nombre
+  const anchoHueco = 115;
+  const xEtiqueta = W - 21 - anchoHueco;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  const etiqueta = exam.student ? `Estudiante: ${exam.student}` : 'Estudiante:';
+  doc.text(etiqueta, xEtiqueta, 15.5);
+  if (!exam.student) {
+    const xLinea = xEtiqueta + doc.getTextWidth('Estudiante:') + 2;
+    doc.setLineWidth(0.2);
+    doc.line(xLinea, 16.2, W - 21, 16.2);
+  }
+  doc.setLineWidth(0.3);
+  doc.line(21, 19, W - 21, 19);
+
+  // marcas de registro, sobre un pad blanco por si hay fondo
+  const dib = (y) => H - y;
+  for (const [cx, cy] of posicionesMarcas(W, H)) {
+    doc.setFillColor(255, 255, 255);
+    doc.rect(cx - 0.85 * OMR.marca, dib(cy) - 0.85 * OMR.marca,
+      1.7 * OMR.marca, 1.7 * OMR.marca, 'F');
+    doc.setFillColor(0, 0, 0);
+    doc.rect(cx - OMR.marca / 2, dib(cy) - OMR.marca / 2,
+      OMR.marca, OMR.marca, 'F');
+  }
+
+  // dos tiras identicas de bits: si una se emborrona, vale la otra
+  const bits = bitsDeVersion(version, pagina);
+  for (const tira of [0, 1]) {
+    const pos = posicionesBits(W, tira);
+    for (let i = 0; i < OMR.bits; i++) {
+      const [cx, cy] = pos[i];
+      doc.setLineWidth(0.25);
+      doc.setDrawColor(0, 0, 0);
+      doc.setFillColor(0, 0, 0);
+      doc.rect(cx - OMR.ladoBit / 2, dib(cy) - OMR.ladoBit / 2,
+        OMR.ladoBit, OMR.ladoBit, bits[i] ? 'FD' : 'D');
+    }
+  }
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.2);
+  doc.setTextColor(0, 0, 0);
+  doc.text('Rellena por completo el cuadrado de la opcion correcta (una sola '
+    + 'por pregunta), con boligrafo azul o negro.',
+    OMR.margenMarca + OMR.marca + 5, H - (OMR.margenMarca + OMR.marca + 3));
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.text(`${exam.code} - v${String(version).padStart(3, '0')} - `
+    + `p${pagina + 1} - `
+    + new Date().toLocaleDateString('es-ES'),
+    W - OMR.margenMarca - OMR.marca - 5, H - (OMR.margenMarca + OMR.marca + 3),
+    { align: 'right' });
+}
+
+/**
+ * Dibuja un examen completo y devuelve {casillas, paginas}.
+ * casillas["3-1"] = [x, y] en puntos PDF, origen abajo a la izquierda.
+ */
+function renderExamOMR(doc, exam, opciones, version) {
+  const W = doc.internal.pageSize.getWidth();
+  const H = doc.internal.pageSize.getHeight();
+  const anchoCol = (W - 2 * OMR.margenLateral - OMR.separacion) / 2;
+  const yInicio = OMR.top;
+  const yFin = H - (OMR.margenMarca + OMR.marca + 6.5);
+  const casillas = {};
+  let paginas = 1;
+
+  let pagina = 0;
+  decoracion(doc, exam, opciones, version, pagina);
+
+  let col = 0;
+  let y = yInicio;
+
+  const nuevaColumna = () => {
+    col++;
+    if (col > 1) {
+      doc.addPage('a4', 'portrait');
+      paginas++;
+      pagina++;
+      decoracion(doc, exam, opciones, version, pagina);
+      col = 0;
+    }
+    y = yInicio;
+  };
+
+  const altoPregunta = (q) => {
+    const x0 = 0;
+    const lineasEnun = doc.splitTextToSize(q.q, anchoCol);
+    let alto = 4 + lineasEnun.length * OMR.interlineadoEnun + 1;
+    for (const L of LETRAS) {
+      const t = doc.splitTextToSize(String(q.options[L] ?? ''),
+        anchoCol - OMR.sangria - 4);
+      alto += Math.max(t.length * OMR.interlineadoOpc, OMR.lado + 1.2);
+    }
+    return alto + 2;
+  };
+
+  exam.questions.forEach((q, idx) => {
+    const alto = altoPregunta(q);
+    if (y + alto > yFin) nuevaColumna();
+    const x = OMR.margenLateral + col * (anchoCol + OMR.separacion);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`P${idx + 1}`, x, y);
+    y += 4;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(OMR.fuenteEnun);
+    const lineasEnun = doc.splitTextToSize(q.q, anchoCol);
+    doc.text(lineasEnun, x, y);
+    y += lineasEnun.length * OMR.interlineadoEnun + 1;
+
+    LETRAS.forEach((L, j) => {
+      const texto = doc.splitTextToSize(String(q.options[L] ?? ''),
+        anchoCol - OMR.sangria - 4);
+      const altoOpc = Math.max(texto.length * OMR.interlineadoOpc,
+        OMR.lado + 1.2);
+      const yCaja = y - OMR.lado + 0.6;      // alineada con la primera linea
+      doc.setLineWidth(0.25);
+      doc.setDrawColor(51, 51, 51);
+      doc.rect(x, yCaja, OMR.lado, OMR.lado, 'D');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(OMR.fuenteOpc);
+      doc.text(L, x + OMR.sangria - 2.4, y);
+      doc.setFont('helvetica', 'normal');
+      doc.text(texto, x + OMR.sangria + 0.8, y);
+
+      // centro de la casilla en puntos PDF, origen abajo a la izquierda
+      const cx = (x + OMR.lado / 2) * MM;
+      const cy = (H - (yCaja + OMR.lado / 2)) * MM;
+      // tercer valor: pagina del examen en la que esta la casilla
+      casillas[`${idx + 1}-${j}`] = [Math.round(cx * 100) / 100,
+        Math.round(cy * 100) / 100, pagina];
+      y += altoOpc;
+    });
+    y += 2;
+  });
+
+  return { casillas, paginas };
+}
+
+/** Plantilla JSON que consume el modulo de correccion. */
+function nuevaPlantilla(doc) {
+  const W = doc.internal.pageSize.getWidth();
+  const H = doc.internal.pageSize.getHeight();
+  return {
+    pagina: [W * MM, H * MM],
+    marcas: posicionesMarcas(W, H).map(([x, y]) => [x * MM, y * MM]),
+    bits: posicionesBits(W, 0).map(([x, y]) => [x * MM, y * MM]),
+    bits2: posicionesBits(W, 1).map(([x, y]) => [x * MM, y * MM]),
+    lado_casilla: OMR.lado * MM,
+    lado_bit: OMR.ladoBit * MM,
+    bits_version: 10,
+    bits_pagina: 2,
+    examenes: {}
+  };
+}
+
+/* Nucleo de lectura OMR en JavaScript puro (sin DOM ni librerias).
+ *
+ * Trabaja sobre una imagen en escala de grises (Uint8Array, w x h) y la
+ * plantilla JSON que genera ExamForge: marcas de registro, tiras de bits con
+ * el numero de version y las coordenadas de cada casilla, todo en puntos PDF
+ * con origen abajo a la izquierda.
+ *
+ * Es el mismo algoritmo que corregir_omr.py: localizar las cuatro marcas,
+ * calcular la homografia, decodificar la version y medir la tinta de cada
+ * casilla.
+ */
+
+const UMBRAL_MARCADA = 0.30;
+const UMBRAL_FLOJO = 0.15;
+const MARGEN_DUDA = 0.12;
+const UMBRAL_VACIO = 0.10;
+const LADO_REL = 4.5 / 210; // lado de la marca respecto al ancho del A4
+
+// ── utilidades de imagen ───────────────────────────────────────────────────
+
+function otsu(gray) {
+  const hist = new Array(256).fill(0);
+  for (let i = 0; i < gray.length; i++) hist[gray[i]]++;
+  const total = gray.length;
+  let suma = 0;
+  for (let i = 0; i < 256; i++) suma += i * hist[i];
+  let sumaB = 0, wB = 0, mejor = 0, umbral = 128;
+  for (let t = 0; t < 256; t++) {
+    wB += hist[t];
+    if (wB === 0) continue;
+    const wF = total - wB;
+    if (wF === 0) break;
+    sumaB += t * hist[t];
+    const mB = sumaB / wB, mF = (suma - sumaB) / wF;
+    const entre = wB * wF * (mB - mF) * (mB - mF);
+    if (entre > mejor) { mejor = entre; umbral = t; }
+  }
+  return umbral;
+}
+
+function medianaBlur3(gray, w, h) {
+  const out = new Uint8Array(gray.length);
+  const v = new Array(9);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (x === 0 || y === 0 || x === w - 1 || y === h - 1) {
+        out[y * w + x] = gray[y * w + x];
+        continue;
+      }
+      let k = 0;
+      for (let dy = -1; dy <= 1; dy++)
+        for (let dx = -1; dx <= 1; dx++) v[k++] = gray[(y + dy) * w + x + dx];
+      v.sort((a, b) => a - b);
+      out[y * w + x] = v[4];
+    }
+  }
+  return out;
+}
+
+/** Componentes conexas de los pixeles oscuros (bin === 1). */
+function componentes(bin, w, h) {
+  const etiqueta = new Int32Array(w * h).fill(-1);
+  const cola = new Int32Array(w * h);
+  const salida = [];
+  for (let p = 0; p < w * h; p++) {
+    if (bin[p] !== 1 || etiqueta[p] !== -1) continue;
+    let ini = 0, fin = 0;
+    cola[fin++] = p;
+    etiqueta[p] = salida.length;
+    let minX = w, maxX = 0, minY = h, maxY = 0, area = 0, sx = 0, sy = 0;
+    while (ini < fin) {
+      const q = cola[ini++];
+      const x = q % w, y = (q / w) | 0;
+      area++; sx += x; sy += y;
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          const nx = x + dx, ny = y + dy;
+          if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+          const r = ny * w + nx;
+          if (bin[r] === 1 && etiqueta[r] === -1) {
+            etiqueta[r] = salida.length;
+            cola[fin++] = r;
+          }
+        }
+      }
+    }
+    salida.push({
+      x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1,
+      area, cx: sx / area, cy: sy / area
+    });
+  }
+  return salida;
+}
+
+// ── marcas de registro ─────────────────────────────────────────────────────
+
+function candidatos(gray, w, h) {
+  const suave = medianaBlur3(gray, w, h);
+  const u = otsu(suave);
+  const bin = new Uint8Array(w * h);
+  for (let i = 0; i < bin.length; i++) bin[i] = suave[i] < u ? 1 : 0;
+  const ladoMin = 0.5 * LADO_REL * w, ladoMax = 2.0 * LADO_REL * w;
+  const borde = 0.16 * Math.min(w, h);
+  return componentes(bin, w, h).filter(c =>
+    c.w > ladoMin && c.w < ladoMax && c.h > ladoMin && c.h < ladoMax &&
+    c.w / c.h > 0.75 && c.w / c.h < 1.33 &&
+    c.area > 0.7 * c.w * c.h &&
+    Math.min(c.cx, c.cy, w - c.cx, h - c.cy) <= borde);
+}
+
+function errorGeometrico(p, ratio) {
+  const d = (a, b) => Math.hypot(a.cx - b.cx, a.cy - b.cy);
+  const [ii, id, sd, si] = p;
+  const ancho = (d(id, ii) + d(sd, si)) / 2;
+  const alto = (d(si, ii) + d(sd, id)) / 2;
+  if (ancho < 1 || alto < 1) return 9e9;
+  let err = Math.abs(ancho / alto - ratio) / ratio;
+  const d1 = d(sd, ii), d2 = d(si, id);
+  err += Math.abs(d1 - d2) / Math.max(d1, d2);
+  return err;
+}
+
+/** Reduce la imagen por un factor entero (media de bloques). */
+function reducir(gray, w, h, f) {
+  const nw = Math.floor(w / f), nh = Math.floor(h / f);
+  const out = new Uint8Array(nw * nh);
+  for (let y = 0; y < nh; y++) {
+    for (let x = 0; x < nw; x++) {
+      let s = 0;
+      for (let dy = 0; dy < f; dy++)
+        for (let dx = 0; dx < f; dx++) s += gray[(y * f + dy) * w + x * f + dx];
+      out[y * nw + x] = Math.round(s / (f * f));
+    }
+  }
+  return { gray: out, w: nw, h: nh };
+}
+
+function detectarMarcas(gray, w, h, plantilla, tolerancia = 0.06) {
+  const m = plantilla.marcas;
+  const ratio = Math.abs(m[1][0] - m[0][0]) / Math.abs(m[3][1] - m[0][1]);
+  // la busqueda de candidatos se hace sobre una copia reducida (las marcas
+  // miden varios milimetros, no hace falta la resolucion completa) y el
+  // refinado, despues, sobre la imagen original
+  const f = Math.max(1, Math.round(w / 800));
+  const chico = f > 1 ? reducir(gray, w, h, f) : { gray, w, h };
+  const cand = candidatos(chico.gray, chico.w, chico.h)
+    .map(c => ({ ...c, cx: c.cx * f, cy: c.cy * f,
+                 w: c.w * f, h: c.h * f, area: c.area * f * f }));
+  if (cand.length < 4) return null;
+  const esquinas = [[0, h], [w, h], [w, 0], [0, 0]]; // II, ID, SD, SI
+  const listas = esquinas.map(([ex, ey]) =>
+    cand.slice().sort((a, b) =>
+      (a.cx - ex) ** 2 + (a.cy - ey) ** 2 - ((b.cx - ex) ** 2 + (b.cy - ey) ** 2)
+    ).slice(0, 4));
+  let mejor = null, mejorErr = 9e9;
+  for (const a of listas[0]) for (const b of listas[1])
+    for (const c of listas[2]) for (const e of listas[3]) {
+      if (new Set([a, b, c, e]).size < 4) continue;
+      const err = errorGeometrico([a, b, c, e], ratio);
+      if (err < mejorErr) { mejorErr = err; mejor = [a, b, c, e]; }
+    }
+  if (!mejor || mejorErr > tolerancia) return null;
+  return refinar(gray, w, h, mejor);
+}
+
+/** Recentra cada marca sobre su mancha negra, ignorando blobs de otro tamano. */
+function refinar(gray, w, h, pts) {
+  const r = Math.round(1.15 * LADO_REL * w);
+  const areaMin = (0.45 * LADO_REL * w) ** 2;
+  const areaMax = (1.9 * LADO_REL * w) ** 2;
+  return pts.map(p => {
+    const x0 = Math.max(0, Math.round(p.cx) - r), x1 = Math.min(w, Math.round(p.cx) + r);
+    const y0 = Math.max(0, Math.round(p.cy) - r), y1 = Math.min(h, Math.round(p.cy) + r);
+    const tw = x1 - x0, th = y1 - y0;
+    if (tw <= 0 || th <= 0) return { cx: p.cx, cy: p.cy };
+    const trozo = new Uint8Array(tw * th);
+    for (let y = 0; y < th; y++)
+      for (let x = 0; x < tw; x++) trozo[y * tw + x] = gray[(y0 + y) * w + x0 + x];
+    const u = otsu(trozo);
+    const bin = new Uint8Array(tw * th);
+    for (let i = 0; i < bin.length; i++) bin[i] = trozo[i] < u ? 1 : 0;
+    const opciones = componentes(bin, tw, th)
+      .filter(c => c.area > areaMin && c.area < areaMax);
+    if (!opciones.length) return { cx: p.cx, cy: p.cy };
+    opciones.sort((a, b) =>
+      (x0 + a.cx - p.cx) ** 2 + (y0 + a.cy - p.cy) ** 2 -
+      ((x0 + b.cx - p.cx) ** 2 + (y0 + b.cy - p.cy) ** 2));
+    return { cx: x0 + opciones[0].cx, cy: y0 + opciones[0].cy };
+  });
+}
+
+// ── homografia ─────────────────────────────────────────────────────────────
+
+/** Resuelve la homografia que lleva los 4 puntos de origen a los de destino. */
+function homografia(src, dst) {
+  const A = [], b = [];
+  for (let i = 0; i < 4; i++) {
+    const [x, y] = src[i], [u, v] = dst[i];
+    A.push([x, y, 1, 0, 0, 0, -x * u, -y * u]); b.push(u);
+    A.push([0, 0, 0, x, y, 1, -x * v, -y * v]); b.push(v);
+  }
+  const n = 8;
+  for (let col = 0; col < n; col++) {
+    let piv = col;
+    for (let f = col + 1; f < n; f++)
+      if (Math.abs(A[f][col]) > Math.abs(A[piv][col])) piv = f;
+    [A[col], A[piv]] = [A[piv], A[col]];
+    [b[col], b[piv]] = [b[piv], b[col]];
+    const d = A[col][col];
+    if (Math.abs(d) < 1e-12) return null;
+    for (let j = col; j < n; j++) A[col][j] /= d;
+    b[col] /= d;
+    for (let f = 0; f < n; f++) {
+      if (f === col) continue;
+      const factor = A[f][col];
+      if (!factor) continue;
+      for (let j = col; j < n; j++) A[f][j] -= factor * A[col][j];
+      b[f] -= factor * b[col];
+    }
+  }
+  return [b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7], 1];
+}
+
+function aplicar(H, x, y) {
+  const d = H[6] * x + H[7] * y + H[8];
+  return [(H[0] * x + H[1] * y + H[2]) / d, (H[3] * x + H[4] * y + H[5]) / d];
+}
+
+// ── medida de tinta ────────────────────────────────────────────────────────
+
+function percentil(gray, q) {
+  const hist = new Array(256).fill(0);
+  for (let i = 0; i < gray.length; i++) hist[gray[i]]++;
+  const objetivo = gray.length * q;
+  let acum = 0;
+  for (let i = 0; i < 256; i++) {
+    acum += hist[i];
+    if (acum >= objetivo) return i;
+  }
+  return 255;
+}
+
+function tinta(gray, w, h, cx, cy, ladoPx, umbral) {
+  const r = Math.round(ladoPx * 0.34);
+  const x0 = Math.round(cx) - r, x1 = Math.round(cx) + r;
+  const y0 = Math.round(cy) - r, y1 = Math.round(cy) + r;
+  if (x0 < 0 || y0 < 0 || x1 >= w || y1 >= h) return 0;
+  let oscuros = 0, total = 0;
+  for (let y = y0; y <= y1; y++)
+    for (let x = x0; x <= x1; x++) {
+      total++;
+      if (gray[y * w + x] < umbral) oscuros++;
+    }
+  return total ? oscuros / total : 0;
+}
+
+// ── lectura de una hoja ────────────────────────────────────────────────────
+
+function leerHoja(gray, w, h, plantilla) {
+  const marcas = detectarMarcas(gray, w, h, plantilla);
+  if (!marcas) return { estado: 'sin marcas de registro' };
+
+  const [pw, ph] = plantilla.pagina;
+  const origen = plantilla.marcas.map(([x, y]) => [x, ph - y]);
+  const destino = marcas.map(p => [p.cx, p.cy]);
+  const H = homografia(origen, destino);
+  if (!H) return { estado: 'sin marcas de registro' };
+
+  const aImagen = (x, y) => aplicar(H, x, ph - y);
+  const a = aImagen(plantilla.marcas[0][0], plantilla.marcas[0][1]);
+  const b = aImagen(plantilla.marcas[1][0], plantilla.marcas[1][1]);
+  const esc = Math.hypot(b[0] - a[0], b[1] - a[1]) /
+    Math.abs(plantilla.marcas[1][0] - plantilla.marcas[0][0]);
+  const lado = plantilla.lado_casilla * esc;
+  const ladoBit = (plantilla.lado_bit || plantilla.lado_casilla) * esc;
+  const umbral = Math.max(90, Math.round(percentil(gray, 0.6) * 0.72));
+
+  // codigo impreso: los ultimos bits_pagina bits son la pagina del examen
+  const bitsPagina = plantilla.bits_pagina || 0;
+  const candidatas = [];
+  for (const clave of ['bits', 'bits2']) {
+    if (!plantilla[clave]) continue;
+    let v = 0;
+    for (const [bx, by] of plantilla[clave]) {
+      const [px, py] = aImagen(bx, by);
+      v = v * 2 + (tinta(gray, w, h, px, py, ladoBit, umbral) > 0.45 ? 1 : 0);
+    }
+    candidatas.push({ version: v >> bitsPagina, pagina: v & ((1 << bitsPagina) - 1) });
+  }
+  const validas = candidatas.filter(c => plantilla.examenes[String(c.version)]);
+  const versiones = [...new Set(validas.map(c => c.version + ':' + c.pagina))];
+  if (!versiones.length) {
+    return { estado: 'version ilegible ' + candidatas.map(c => c.version).join('/') };
+  }
+  if (versiones.length > 1) return { estado: 'version ambigua ' + versiones.join('/') };
+
+  const { version, pagina } = validas[0];
+  const ex = plantilla.examenes[String(version)];
+  const nPreguntas = ex.correctas.length;
+  const respuestas = [], dudas = [], leidas = [];
+  for (let i = 1; i <= nPreguntas; i++) {
+    const casilla = ex.casillas[`${i}-0`];
+    // en un examen de varias hojas, cada una solo contesta sus preguntas
+    if (casilla.length > 2 && casilla[2] !== pagina) {
+      respuestas.push(null);
+      continue;
+    }
+    leidas.push(i);
+    const valores = [];
+    for (let j = 0; j < 5; j++) {
+      const [x, y] = ex.casillas[`${i}-${j}`];
+      const [px, py] = aImagen(x, y);
+      valores.push(tinta(gray, w, h, px, py, lado, umbral));
+    }
+    const orden = valores.map((v, j) => j).sort((p, q) => valores[q] - valores[p]);
+    const vm = valores[orden[0]], vs = valores[orden[1]];
+    if (vm >= UMBRAL_MARCADA && vm - vs >= MARGEN_DUDA) {
+      respuestas.push('ABCDE'[orden[0]]);
+    } else if (vm >= UMBRAL_FLOJO && vm >= 2.5 * Math.max(vs, 0.02)) {
+      respuestas.push('ABCDE'[orden[0]]);
+    } else if (vm < UMBRAL_VACIO) {
+      respuestas.push('');
+    } else {
+      respuestas.push('?');
+      dudas.push(i);
+    }
+  }
+  return {
+    estado: dudas.length ? 'revisar' : 'ok',
+    version, pagina, codigo: ex.codigo, estudiante: ex.estudiante || '',
+    respuestas, leidas, dudas,
+    correctas: ex.correctas, valores: ex.valores || []
+  };
+}
+</script>
 
 <!-- Toast -->
 <div class="toast" id="toast"></div>
@@ -1881,6 +2525,250 @@ function downloadCSV() {
   showToast('CSV descargado', 'success');
 }
 
+
+// ─── OMR: generación de la hoja imprimible y de la plantilla ──────────────
+
+function construirPDFyPlantilla() {
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const plantilla = nuevaPlantilla(doc);
+  const opciones = { asignatura: state.subject, titulo: 'Evaluacion tipo test' };
+  state.generatedExams.forEach((ex, i) => {
+    if (i > 0) doc.addPage('a4', 'portrait');
+    const version = i + 1;
+    const { casillas } = renderExamOMR(doc, ex, opciones, version);
+    plantilla.examenes[String(version)] = {
+      codigo: ex.code,
+      estudiante: ex.student || '',
+      correctas: ex.questions.map(q => q.correct),
+      valores: ex.questions.map(q => String(q.options[q.correct] ?? '')),
+      casillas
+    };
+  });
+  plantilla.asignatura = state.subject;
+  plantilla.generado = new Date().toISOString();
+  return { doc, plantilla };
+}
+
+function downloadPDFUnico() {
+  const { doc } = construirPDFyPlantilla();
+  doc.save(`examenes_${(state.subject || 'examen').replace(/\s+/g, '_')}.pdf`);
+  showToast('PDF listo para imprimir. Descarga también la plantilla JSON.', 'success');
+}
+
+function downloadPlantillaOMR() {
+  const { plantilla } = construirPDFyPlantilla();
+  omrPlantilla = plantilla;              // queda cargada para corregir ya
+  const blob = new Blob([JSON.stringify(plantilla)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `plantilla_omr_${(state.subject || 'examen').replace(/\s+/g, '_')}.json`;
+  a.click();
+  showToast('Plantilla descargada. Guárdala: sin ella no se pueden corregir los escaneos.', 'success');
+}
+
+// ─── OMR: corrección ──────────────────────────────────────────────────────
+
+let omrPlantilla = null;
+let omrNotas = [];
+
+function abrirCorrector() {
+  ['section-config', 'section-progress', 'section-results'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  document.getElementById('section-correccion').style.display = 'block';
+  if (omrPlantilla) {
+    document.getElementById('omrPlantillaInfo').textContent =
+      `Plantilla en memoria: ${Object.keys(omrPlantilla.examenes).length} versiones.`;
+  }
+  window.scrollTo(0, 0);
+}
+
+function cerrarCorrector() {
+  document.getElementById('section-correccion').style.display = 'none';
+  const hay = state.generatedExams && state.generatedExams.length;
+  document.getElementById(hay ? 'section-results' : 'section-config').style.display = 'block';
+}
+
+async function cargarPlantillaOMR(ev) {
+  const f = ev.target.files[0];
+  if (!f) return;
+  try {
+    omrPlantilla = JSON.parse(await f.text());
+    const n = Object.keys(omrPlantilla.examenes || {}).length;
+    if (!n) throw new Error('sin exámenes');
+    document.getElementById('omrPlantillaInfo').textContent =
+      `${f.name}: ${n} versiones, ${omrPlantilla.examenes['1'].correctas.length} preguntas.`;
+  } catch (e) {
+    omrPlantilla = null;
+    document.getElementById('omrPlantillaInfo').textContent =
+      'No se ha podido leer la plantilla: ' + e.message;
+    showToast('Plantilla no válida', 'error');
+  }
+}
+
+/** Convierte un canvas en escala de grises (Uint8Array). */
+function canvasAGris(canvas) {
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const d = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+  const g = new Uint8Array(canvas.width * canvas.height);
+  for (let i = 0, p = 0; i < d.length; i += 4, p++) {
+    g[p] = (d[i] * 299 + d[i + 1] * 587 + d[i + 2] * 114) / 1000;
+  }
+  return g;
+}
+
+/** Rasteriza cada página de un PDF a la resolución pedida. */
+async function paginasDePDF(file, anchoObjetivo = 1700) {
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  const out = [];
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const base = page.getViewport({ scale: 1 });
+    const viewport = page.getViewport({ scale: anchoObjetivo / base.width });
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(viewport.width);
+    canvas.height = Math.round(viewport.height);
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+    out.push({ nombre: `${file.name} p.${p}`, canvas });
+  }
+  return out;
+}
+
+async function paginaDeImagen(file) {
+  const img = await new Promise((res, rej) => {
+    const i = new Image();
+    i.onload = () => res(i);
+    i.onerror = rej;
+    i.src = URL.createObjectURL(file);
+  });
+  const escala = Math.min(1, 1700 / img.width);
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(img.width * escala);
+  canvas.height = Math.round(img.height * escala);
+  canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+  return [{ nombre: file.name, canvas }];
+}
+
+async function corregirEscaneos() {
+  if (!omrPlantilla) return showToast('Carga primero la plantilla JSON', 'error');
+  const files = [...document.getElementById('omrEscaneos').files];
+  if (!files.length) return showToast('Sube el PDF o las imágenes escaneadas', 'error');
+
+  const penaliza = parseFloat(document.getElementById('omrPenaliza').value) || 0;
+  document.getElementById('btnCorregir').disabled = true;
+  document.getElementById('omrProgressWrap').style.display = 'block';
+
+  // una hoja puede ser una pagina de un examen de varias: se acumulan por version
+  const porVersion = {}, incidencias = [];
+  let hojas = [], hechas = 0;
+  for (const f of files) {
+    hojas = hojas.concat(f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf')
+      ? await paginasDePDF(f) : await paginaDeImagen(f));
+  }
+
+  for (const hoja of hojas) {
+    document.getElementById('omrEstado').textContent =
+      `Leyendo ${hoja.nombre} (${hechas + 1} de ${hojas.length})...`;
+    document.getElementById('omrProgress').style.width =
+      Math.round(100 * hechas / hojas.length) + '%';
+    await sleep(10);                    // deja repintar la barra
+
+    const gris = canvasAGris(hoja.canvas);
+    const r = leerHoja(gris, hoja.canvas.width, hoja.canvas.height, omrPlantilla);
+    hechas++;
+    if (!r.version) { incidencias.push({ hoja: hoja.nombre, estado: r.estado }); continue; }
+
+    const k = String(r.version);
+    if (!porVersion[k]) {
+      porVersion[k] = {
+        version: r.version, codigo: r.codigo, estudiante: r.estudiante,
+        correctas: r.correctas, valores: r.valores,
+        respuestas: new Array(r.correctas.length).fill(null),
+        dudas: [], hojas: []
+      };
+    }
+    porVersion[k].hojas.push(hoja.nombre);
+    r.leidas.forEach(i => { porVersion[k].respuestas[i - 1] = r.respuestas[i - 1]; });
+    porVersion[k].dudas.push(...r.dudas);
+  }
+
+  document.getElementById('omrProgress').style.width = '100%';
+  document.getElementById('omrEstado').textContent =
+    `${hojas.length} hojas leídas · ${Object.keys(porVersion).length} exámenes`;
+
+  omrNotas = Object.values(porVersion).map(d => {
+    const aciertos = d.respuestas.filter((r, i) => r === d.correctas[i]).length;
+    const fallos = d.respuestas.filter((r, i) => r && r !== '?' && r !== d.correctas[i]).length;
+    const sinLeer = d.respuestas.filter(r => r === null).length;
+    const total = d.correctas.length;
+    const nota = Math.max(0, aciertos - penaliza * fallos) * 10 / total;
+    return {
+      ...d, aciertos, fallos, sinLeer,
+      nota: Math.round(nota * 100) / 100,
+      estado: sinLeer ? 'faltan hojas' : (d.dudas.length ? 'revisar' : 'ok')
+    };
+  }).sort((a, b) => a.version - b.version);
+
+  pintarNotas(incidencias);
+  document.getElementById('btnCorregir').disabled = false;
+  showToast(`Corregidos ${omrNotas.length} exámenes`, 'success');
+}
+
+function pintarNotas(incidencias) {
+  const total = omrNotas.length ? omrNotas[0].correctas.length : 0;
+  let html = '<table style="width:100%;border-collapse:collapse;font-size:12px">';
+  html += '<tr style="text-align:left"><th>Versión</th><th>Código</th><th>Estudiante</th>'
+    + '<th>Estado</th><th>Aciertos</th><th>Fallos</th><th>Nota</th><th>Revisar</th>'
+    + '<th>Respuestas (leída / correcta)</th></tr>';
+  for (const d of omrNotas) {
+    const detalle = d.respuestas.map((r, i) => {
+      const leida = r === null ? '·' : (r === '' ? '—' : r);
+      const bien = r === d.correctas[i];
+      const color = r === null ? 'var(--muted)' : (bien ? 'var(--accent)' : '#d9534f');
+      return `<span style="color:${color}" title="P${i + 1}: correcta ${d.correctas[i]}">`
+        + `${leida}/${d.correctas[i]}</span>`;
+    }).join(' ');
+    html += `<tr><td>${d.version}</td><td>${d.codigo}</td><td>${d.estudiante || ''}</td>`
+      + `<td>${d.estado}</td><td>${d.aciertos}/${total}</td><td>${d.fallos}</td>`
+      + `<td><strong>${d.nota.toFixed(2)}</strong></td>`
+      + `<td>${d.dudas.map(q => 'P' + q).join(' ')}</td><td>${detalle}</td></tr>`;
+  }
+  html += '</table>';
+  if (incidencias.length) {
+    html += '<p class="hint" style="margin-top:10px"><strong>Hojas no leídas:</strong> '
+      + incidencias.map(i => `${i.hoja} (${i.estado})`).join(' · ') + '</p>';
+  }
+  document.getElementById('omrTabla').innerHTML = html;
+  document.getElementById('omrResultados').style.display = 'block';
+}
+
+function descargarNotas() {
+  if (!omrNotas.length) return showToast('Todavía no hay notas', 'error');
+  const total = omrNotas[0].correctas.length;
+  const cab = ['version', 'codigo', 'estudiante', 'estado', 'aciertos', 'fallos',
+    'sin_leer', 'nota_sobre_10', 'dudas'];
+  for (let i = 1; i <= total; i++) cab.push(`P${i}`, `P${i}_correcta`, `P${i}_valor`);
+  const filas = [cab.join(';')];
+  for (const d of omrNotas) {
+    const f = [d.version, d.codigo, d.estudiante, d.estado, d.aciertos, d.fallos,
+      d.sinLeer, String(d.nota).replace('.', ','), d.dudas.map(q => 'P' + q).join(' ')];
+    for (let i = 0; i < total; i++) {
+      f.push(d.respuestas[i] === null ? '' : d.respuestas[i]);
+      f.push(d.correctas[i]);
+      f.push(`"${String(d.valores[i] ?? '').replace(/"/g, '""')}"`);
+    }
+    filas.push(f.join(';'));
+  }
+  const blob = new Blob(['\ufeff' + filas.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `notas_${Date.now()}.csv`;
+  a.click();
+  showToast('Notas descargadas', 'success');
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────
 async function startGeneration() {
   const apiKey = document.getElementById('apiKey').value.trim();
@@ -2032,6 +2920,8 @@ function resetAll() {
   document.getElementById('charsCounter').textContent = '0 caracteres';
   document.getElementById('section-results').style.display = 'none';
   document.getElementById('section-progress').style.display = 'none';
+  const corr = document.getElementById('section-correccion');
+  if (corr) corr.style.display = 'none';
   document.getElementById('section-config').style.display = 'block';
   ['orchestrator','analyst','generator','validator','formatter'].forEach(n => setNode(n, null));
 }
