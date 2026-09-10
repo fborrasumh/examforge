@@ -744,18 +744,16 @@
           <div style="min-width:200px">
             <label for="modelSelect">Modelo</label>
             <select id="modelSelect" onchange="updateCostEstimate()">
-              <optgroup label="GPT-5.6 — más capacidad de razonamiento">
-                <option value="gpt-5.6">GPT-5.6 (preguntas más elaboradas)</option>
-                <option value="gpt-5.6-mini">GPT-5.6 Mini (equilibrado)</option>
-                <option value="gpt-5.6-nano">GPT-5.6 Nano (rápido y barato)</option>
-              </optgroup>
-              <optgroup label="GPT-4">
-                <option value="gpt-4o-mini" selected>GPT-4o Mini (rápido)</option>
-                <option value="gpt-4o">GPT-4o (preciso)</option>
-                <option value="gpt-4-turbo">GPT-4 Turbo</option>
-              </optgroup>
+              <option value="gpt-4o-mini" selected>GPT-4o Mini (rápido)</option>
+              <option value="gpt-4o">GPT-4o (preciso)</option>
+              <option value="gpt-4-turbo">GPT-4 Turbo</option>
             </select>
-            <p class="hint" id="modelHint" style="margin-top:6px"></p>
+            <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+              <button class="btn btn-sm" type="button" onclick="cargarModelosDisponibles()">↻ Cargar modelos de mi cuenta</button>
+              <input type="text" id="modelCustom" placeholder="o escribe el ID exacto"
+                     oninput="updateCostEstimate()" style="flex:1;min-width:170px" />
+            </div>
+            <p class="hint" id="modelHint" style="margin-top:6px">Pulsa "Cargar modelos" para ver los que tu cuenta puede usar de verdad.</p>
           </div>
         </div>
         <p class="hint" id="apikey-hint">🔒 La clave se guarda en tu navegador (localStorage) y nunca sale de él.</p>
@@ -1686,17 +1684,56 @@ function clearFieldError(fieldId) {
 
 // ─── Cost & time estimation ──────────────────────────────────────────────────
 // Token pricing (input) per 1M tokens, approximate:
-const MODEL_PRICE = { 'gpt-4o-mini': 0.15, 'gpt-4o': 5.00, 'gpt-4-turbo': 10.00,
-                      'gpt-5.6-nano': 0.20, 'gpt-5.6-mini': 1.00, 'gpt-5.6': 6.00 };
-const MODEL_SPEED = { 'gpt-4o-mini': 8,    'gpt-4o': 3,     'gpt-4-turbo': 2,
-                      'gpt-5.6-nano': 6,   'gpt-5.6-mini': 3, 'gpt-5.6': 2 };  // calls/min approx
+// precios y velocidades solo de los modelos que se han medido; para
+// cualquier otro, la estimacion se marca como orientativa
+const MODEL_PRICE = { 'gpt-4o-mini': 0.15, 'gpt-4o': 5.00, 'gpt-4-turbo': 10.00 };
+const MODEL_SPEED = { 'gpt-4o-mini': 8,    'gpt-4o': 3,     'gpt-4-turbo': 2 };  // calls/min approx
 
 /* Los modelos de la familia GPT-5.6 razonan antes de responder y solo
  * admiten temperature = 1: cualquier otro valor lo rechaza la API. Aqui se
  * fija en la propia llamada, para que el resto del codigo pueda seguir
  * pidiendo la temperatura que quiera sin romper nada. */
+/* Los identificadores de modelo cambian a menudo y no todas las cuentas
+ * tienen acceso a los mismos. En vez de mantener una lista fija, se piden a
+ * la propia API con la clave del usuario. */
+async function cargarModelosDisponibles() {
+  const clave = document.getElementById('apiKey').value.trim() || state.apiKey;
+  const aviso = document.getElementById('modelHint');
+  if (!clave) { showToast('Introduce primero tu API Key', 'error'); return; }
+  aviso.textContent = 'Consultando los modelos de tu cuenta...';
+  try {
+    const r = await fetch('https://api.openai.com/v1/models',
+      { headers: { 'Authorization': 'Bearer ' + clave } });
+    if (!r.ok) throw new Error((await r.json()).error?.message || 'Error de API');
+    const ids = (await r.json()).data
+      .map(m => m.id)
+      .filter(id => /^(gpt|o\d)/.test(id) && !/(audio|realtime|transcribe|tts|image|embedding|moderation)/.test(id))
+      .sort();
+    const sel = document.getElementById('modelSelect');
+    const previo = sel.value;
+    sel.innerHTML = '';
+    for (const id of ids) {
+      const o = document.createElement('option');
+      o.value = id; o.textContent = id;
+      sel.appendChild(o);
+    }
+    if (ids.includes(previo)) sel.value = previo;
+    aviso.textContent = `${ids.length} modelos disponibles en tu cuenta.`;
+    updateCostEstimate();
+  } catch (e) {
+    aviso.textContent = 'No se ha podido consultar la lista: ' + e.message;
+    showToast('No se han podido cargar los modelos', 'error');
+  }
+}
+
+/** El ID que se usara: el escrito a mano tiene prioridad sobre el desplegable. */
+function modeloElegido() {
+  const escrito = (document.getElementById('modelCustom')?.value || '').trim();
+  return escrito || document.getElementById('modelSelect').value;
+}
+
 function esModeloRazonador(modelo) {
-  return /^gpt-5/.test(modelo || '');
+  return /^(gpt-5|o\d)/.test(modelo || '');
 }
 
 function temperaturaValida(modelo, pedida) {
@@ -1707,15 +1744,21 @@ function updateCostEstimate() {
   const material  = document.getElementById('material').value;
   const stuText   = document.getElementById('studentList').value;
   const nQ        = parseInt(document.getElementById('numQuestions').value) || 10;
-  const model     = document.getElementById('modelSelect').value;
+  const model     = modeloElegido();
   const students  = parseStudents(stuText).length;
 
   const avisoModelo = document.getElementById('modelHint');
   if (avisoModelo) {
-    avisoModelo.textContent = esModeloRazonador(model)
-      ? 'Modelo con razonamiento: tarda más por pregunta y trabaja siempre a '
-        + 'temperatura 1 (la API no admite otro valor).'
-      : '';
+    const partes = [];
+    if (esModeloRazonador(model)) {
+      partes.push('Modelo con razonamiento: tarda más y trabaja siempre a '
+        + 'temperatura 1 (la API no admite otro valor).');
+    }
+    if (!MODEL_PRICE[model]) {
+      partes.push('Coste y tiempo son orientativos: no hay tarifa medida para '
+        + model + '.');
+    }
+    avisoModelo.textContent = partes.join(' ');
   }
 
   if (students === 0) {
@@ -2667,7 +2710,7 @@ async function startGeneration() {
   if (filesLoading.length > 0) return showToast('Espera a que terminen de procesar los archivos', 'error');
 
   state.apiKey = apiKey;
-  state.model = document.getElementById('modelSelect').value;
+  state.model = modeloElegido();
   state.material = combinedMaterial;
   state.subject = subject;
   state.numQuestions = parseInt(document.getElementById('numQuestions').value) || 10;
