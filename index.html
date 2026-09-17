@@ -869,6 +869,13 @@ Los productos son glucosa y oxígeno..."></textarea>
             </select>
             <p class="hint" id="qHint">A4 vertical · 2 columnas · casillas para lectura automática</p>
           </div>
+          <div>
+            <label for="numOptions" id="lbl-num-options">Nº de opciones por pregunta</label>
+            <select id="numOptions" onchange="updateCostEstimate()">
+              <option value="4">4 opciones (A B C D) — una correcta</option>
+              <option value="5" selected>5 opciones (A B C D E) — una correcta</option>
+            </select>
+          </div>
         </div>
         <div style="margin-top:12px">
           <label for="difficulty">Nivel de dificultad</label>
@@ -1236,6 +1243,7 @@ function decoracion(doc, exam, opciones, version, pagina) {
  * casillas["3-1"] = [x, y] en puntos PDF, origen abajo a la izquierda.
  */
 function renderExamOMR(doc, exam, opciones, version) {
+  const LETRAS_EX = (state.numOptions === 4) ? ['A','B','C','D'] : ['A','B','C','D','E'];
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
   const anchoCol = (W - 2 * OMR.margenLateral - OMR.separacion) / 2;
@@ -1266,7 +1274,7 @@ function renderExamOMR(doc, exam, opciones, version) {
     const x0 = 0;
     const lineasEnun = doc.splitTextToSize(q.q, anchoCol);
     let alto = 4 + lineasEnun.length * OMR.interlineadoEnun + 1;
-    for (const L of LETRAS) {
+    for (const L of LETRAS_EX) {
       const t = doc.splitTextToSize(String(q.options[L] ?? ''),
         anchoCol - OMR.sangria - 4);
       alto += Math.max(t.length * OMR.interlineadoOpc, OMR.lado + 1.2);
@@ -1291,7 +1299,7 @@ function renderExamOMR(doc, exam, opciones, version) {
     doc.text(lineasEnun, x, y);
     y += lineasEnun.length * OMR.interlineadoEnun + 1;
 
-    LETRAS.forEach((L, j) => {
+    LETRAS_EX.forEach((L, j) => {
       const texto = doc.splitTextToSize(String(q.options[L] ?? ''),
         anchoCol - OMR.sangria - 4);
       const altoOpc = Math.max(texto.length * OMR.interlineadoOpc,
@@ -1694,6 +1702,7 @@ let state = {
   material: '',
   subject: '',
   numQuestions: 10,
+  numOptions: 5,
   difficulty: 'intermedio',
   examLang: 'español',
   extraInstructions: '',
@@ -1730,6 +1739,7 @@ const I18N = {
     ph_material:'Pega aquí el contenido del tema: apuntes, esquemas, texto del libro...',
     card_params:'Parámetros del Examen', lbl_subject:'Asignatura', ph_subject:'Ej: Biología Celular',
     lbl_questions:'Nº de preguntas', lbl_difficulty:'Nivel de dificultad',
+    lbl_num_options:'Nº de opciones por pregunta',
     diff_basic:'Básico', diff_mid:'Intermedio', diff_adv:'Avanzado', diff_mix:'Mixto (variado)',
     lbl_exam_lang:'Idioma del examen',
     lbl_extra:'Instrucciones adicionales al generador', ph_extra:'Ej: Incluye preguntas de aplicación práctica...',
@@ -1759,6 +1769,7 @@ const I18N = {
     ph_material:'Enganxa aquí el contingut del tema: apunts, esquemes, text del llibre...',
     card_params:'Paràmetres de l\'Examen', lbl_subject:'Assignatura', ph_subject:'Ex: Biologia Cel·lular',
     lbl_questions:'Nombre de preguntes', lbl_difficulty:'Nivell de dificultat',
+    lbl_num_options:'Nombre d\'opcions per pregunta',
     diff_basic:'Bàsic', diff_mid:'Intermedi', diff_adv:'Avançat', diff_mix:'Mixt (variat)',
     lbl_exam_lang:'Idioma de l\'examen',
     lbl_extra:'Instruccions addicionals al generador', ph_extra:'Ex: Inclou preguntes d\'aplicació pràctica...',
@@ -1788,6 +1799,7 @@ const I18N = {
     ph_material:'Itsatsi hemen gaiaren edukia: apunteak, eskemak, liburuaren testua...',
     card_params:'Azterketa Parametroak', lbl_subject:'Ikasgaia', ph_subject:'Adib: Biologia Zelularra',
     lbl_questions:'Galdera kopurua', lbl_difficulty:'Zailtasun maila',
+    lbl_num_options:'Aukera kopurua galdera bakoitzeko',
     diff_basic:'Oinarrizkoa', diff_mid:'Ertaina', diff_adv:'Aurreratua', diff_mix:'Mistoa',
     lbl_exam_lang:'Azterketa hizkuntza',
     lbl_extra:'Sortzailearen argibide gehigarriak', ph_extra:'Adib: Aplikazio praktikoko galderak...',
@@ -1817,6 +1829,7 @@ const I18N = {
     ph_material:'Pega aquí o contido do tema: apuntamentos, esquemas, texto do libro...',
     card_params:'Parámetros do Exame', lbl_subject:'Materia', ph_subject:'Ex: Bioloxía Celular',
     lbl_questions:'Nº de preguntas', lbl_difficulty:'Nivel de dificultade',
+    lbl_num_options:'Nº de opcións por pregunta',
     diff_basic:'Básico', diff_mid:'Intermedio', diff_adv:'Avanzado', diff_mix:'Mixto (variado)',
     lbl_exam_lang:'Idioma do exame',
     lbl_extra:'Instrucións adicionais ao xerador', ph_extra:'Ex: Inclúe preguntas de aplicación práctica...',
@@ -1846,6 +1859,7 @@ const I18N = {
     ph_material:'Cola aquí lo contengut del tèma: nòtas, esquèmas, tèxt del libre...',
     card_params:'Paramètres de l\'Examen', lbl_subject:'Matèria', ph_subject:'Ex: Biologia Cel·lulara',
     lbl_questions:'Nombre de preguntas', lbl_difficulty:'Nivel de dificultат',
+    lbl_num_options:'Nombre d\'opcions per pregunta',
     diff_basic:'Basic', diff_mid:'Intermediari', diff_adv:'Avançat', diff_mix:'Mèste (variat)',
     lbl_exam_lang:'Lenga de l\'examen',
     lbl_extra:'Instruccions adicionaus al generator', ph_extra:'Ex: Inclure preguntas d\'aplicacion practica...',
@@ -1875,6 +1889,7 @@ const I18N = {
     ph_material:'Paste the topic content here: notes, outlines, textbook text...',
     card_params:'Exam Parameters', lbl_subject:'Subject', ph_subject:'E.g. Cell Biology',
     lbl_questions:'Number of questions', lbl_difficulty:'Difficulty level',
+    lbl_num_options:'Options per question',
     diff_basic:'Basic', diff_mid:'Intermediate', diff_adv:'Advanced', diff_mix:'Mixed (varied)',
     lbl_exam_lang:'Exam language',
     lbl_extra:'Additional instructions for the generator', ph_extra:'E.g. Include applied practice questions...',
@@ -1904,6 +1919,7 @@ const I18N = {
     ph_material:'Collez ici le contenu du cours : notes, schémas, texte du manuel...',
     card_params:'Paramètres de l\'Examen', lbl_subject:'Matière', ph_subject:'Ex : Biologie Cellulaire',
     lbl_questions:'Nombre de questions', lbl_difficulty:'Niveau de difficulté',
+    lbl_num_options:'Options par question',
     diff_basic:'Basique', diff_mid:'Intermédiaire', diff_adv:'Avancé', diff_mix:'Mixte (varié)',
     lbl_exam_lang:'Langue de l\'examen',
     lbl_extra:'Instructions supplémentaires au générateur', ph_extra:'Ex : Inclure des questions d\'application pratique...',
@@ -1933,6 +1949,7 @@ const I18N = {
     ph_material:'Fügen Sie hier den Themeninhalt ein: Notizen, Skizzen, Lehrbuchtext...',
     card_params:'Prüfungsparameter', lbl_subject:'Fach', ph_subject:'Z.B. Zellbiologie',
     lbl_questions:'Anzahl der Fragen', lbl_difficulty:'Schwierigkeitsgrad',
+    lbl_num_options:'Optionen pro Frage',
     diff_basic:'Grundlegend', diff_mid:'Mittel', diff_adv:'Fortgeschritten', diff_mix:'Gemischt',
     lbl_exam_lang:'Prüfungssprache',
     lbl_extra:'Zusätzliche Anweisungen an den Generator', ph_extra:'Z.B. Praxisbezogene Fragen einbeziehen...',
@@ -1962,6 +1979,7 @@ const I18N = {
     ph_material:'Incolla qui il contenuto del tema: appunti, schemi, testo del libro...',
     card_params:'Parametri dell\'Esame', lbl_subject:'Materia', ph_subject:'Es: Biologia Cellulare',
     lbl_questions:'N. di domande', lbl_difficulty:'Livello di difficoltà',
+    lbl_num_options:'Opzioni per domanda',
     diff_basic:'Base', diff_mid:'Intermedio', diff_adv:'Avanzato', diff_mix:'Misto (variato)',
     lbl_exam_lang:'Lingua dell\'esame',
     lbl_extra:'Istruzioni aggiuntive al generatore', ph_extra:'Es: Includi domande di applicazione pratica...',
@@ -1991,6 +2009,7 @@ const I18N = {
     ph_material:'Cole aqui o conteúdo do tema: apontamentos, esquemas, texto do livro...',
     card_params:'Parâmetros do Exame', lbl_subject:'Disciplina', ph_subject:'Ex: Biologia Celular',
     lbl_questions:'Nº de perguntas', lbl_difficulty:'Nível de dificuldade',
+    lbl_num_options:'Opções por pergunta',
     diff_basic:'Básico', diff_mid:'Intermédio', diff_adv:'Avançado', diff_mix:'Misto (variado)',
     lbl_exam_lang:'Idioma do exame',
     lbl_extra:'Instruções adicionais ao gerador', ph_extra:'Ex: Incluir perguntas de aplicação prática...',
@@ -2035,6 +2054,7 @@ const I18N_MAP = [
   ['#subject',             'ph_subject',  'placeholder'],
   ['label[for="numQuestions"]', 'lbl_questions'],
   ['label[for="difficulty"]',   'lbl_difficulty'],
+  ['#lbl-num-options',         'lbl_num_options'],
   ['#diff-basic',          'diff_basic'],
   ['#diff-mid',            'diff_mid'],
   ['#diff-adv',            'diff_adv'],
@@ -2568,7 +2588,7 @@ async function callOpenAI(systemPrompt, userPrompt, temperature = 0.7) {
 async function agentOrchestrator() {
   setNode('orchestrator', 'active');
   log('orchestrator', `Iniciando pipeline para ${state.students.length} estudiantes`);
-  log('orchestrator', `Asignatura: ${state.subject} | Preguntas: ${state.numQuestions} | Dificultad: ${state.difficulty}`);
+  log('orchestrator', `Asignatura: ${state.subject} | Preguntas: ${state.numQuestions} | Opciones: ${state.numOptions} | Dificultad: ${state.difficulty}`);
   log('orchestrator', 'Delegando análisis de material al Agente Analista...');
   await sleep(500);
   setNode('orchestrator', 'done');
@@ -2650,7 +2670,8 @@ async function agentGenerator() {
 
   state.examPool = [];
 
-  const systemPrompt = `Eres un experto en evaluación educativa. Generas preguntas tipo test de alta calidad con exactamente 5 opciones (A, B, C, D, E), solo UNA correcta. Los distractores deben ser plausibles pero claramente incorrectos. Responde SOLO con JSON válido, sin markdown.`;
+  const opLetras = state.numOptions === 4 ? 'A, B, C, D' : 'A, B, C, D, E';
+  const systemPrompt = `Eres un experto en evaluación educativa. Generas preguntas tipo test de alta calidad con exactamente ${state.numOptions} opciones (${opLetras}), solo UNA correcta. Los distractores deben ser plausibles pero claramente incorrectos. Responde SOLO con JSON válido, sin markdown.`;
 
   for (let b = 0; b < batches; b++) {
     const from = b * batchSize;
@@ -2661,8 +2682,8 @@ async function agentGenerator() {
     // Para N preguntas, cada letra debe aparecer ~N/5 veces
     const N = state.numQuestions;
     const distribution = [];
-    const letters = ['A','B','C','D','E'];
-    for (let i = 0; i < N; i++) distribution.push(letters[i % 5]);
+    const letters = state.numOptions === 4 ? ['A','B','C','D'] : ['A','B','C','D','E'];
+    for (let i = 0; i < N; i++) distribution.push(letters[i % state.numOptions]);
     // Mezclar la distribución para que no sea siempre A,B,C,D,E,A,B,C...
     for (let i = distribution.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -2693,7 +2714,8 @@ IMPORTANTE:
 - DEBES colocar la respuesta correcta en la posición indicada arriba para cada pregunta
 - Cada set debe tener preguntas DIFERENTES (distintos enunciados, opciones y respuestas correctas)
 - Los distractores deben ser plausibles
-- Para sets adicionales, distribuye las correctas ALEATORIAMENTE entre A, B, C, D, E evitando que ninguna letra domine
+- IMPORTANTE: genera exactamente ${state.numOptions} opciones por pregunta (${opLetras}), no más ni menos
+- Para sets adicionales, distribuye las correctas ALEATORIAMENTE entre ${opLetras} evitando que ninguna letra domine
 - Redacta en español académico
 - Cubre diferentes conceptos del material
 
@@ -2709,8 +2731,7 @@ Responde con este JSON:
             "A": "Opción A",
             "B": "Opción B",
             "C": "Opción C",
-            "D": "Opción D",
-            "E": "Opción E"
+            "D": "Opción D"${state.numOptions === 5 ? ',"E": "Opción E"' : ''}
           },
           "correct": "B",
           "concept": "concepto evaluado"
@@ -2729,9 +2750,9 @@ Responde con este JSON:
     parsed.sets.forEach((set, si) => {
       // Construir distribución aleatoria uniforme para este set
       const N2 = set.questions.length;
-      const letters = ['A','B','C','D','E'];
+      const letters = state.numOptions === 4 ? ['A','B','C','D'] : ['A','B','C','D','E'];
       const forcedDist = [];
-      for (let i = 0; i < N2; i++) forcedDist.push(letters[i % 5]);
+      for (let i = 0; i < N2; i++) forcedDist.push(letters[i % state.numOptions]);
       // Fisher-Yates shuffle con seed diferente por set
       for (let i = forcedDist.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -2777,8 +2798,9 @@ async function agentValidator() {
   for (const set of state.examPool) {
     for (const q of set.questions) {
       if (!q.q || !q.options || !q.correct) { structIssues++; continue; }
-      if (!['A','B','C','D','E'].includes(q.correct)) { q.correct = 'A'; structIssues++; }
-      if (Object.keys(q.options).length !== 5) { structIssues++; }
+      const validLetters = state.numOptions === 4 ? ['A','B','C','D'] : ['A','B','C','D','E'];
+      if (!validLetters.includes(q.correct)) { q.correct = 'A'; structIssues++; }
+      if (Object.keys(q.options).length !== state.numOptions) { structIssues++; }
       if (!q.options[q.correct]) { q.correct = Object.keys(q.options)[0]; structIssues++; }
     }
   }
@@ -3203,6 +3225,7 @@ async function startGeneration() {
   state.material = combinedMaterial;
   state.subject = subject;
   state.numQuestions = parseInt(document.getElementById('numQuestions').value) || 10;
+  state.numOptions = parseInt(document.getElementById('numOptions').value) || 5;
   state.difficulty = document.getElementById('difficulty').value;
   state.examLang = document.getElementById('examLang').value;
   state.extraInstructions = document.getElementById('extraInstructions').value;
@@ -3261,7 +3284,7 @@ function showResults() {
     <div class="stat-box"><div class="stat-val">${state.generatedExams.length}</div><div class="stat-label">${T('lbl_exams')}</div></div>
     <div class="stat-box"><div class="stat-val">${state.numQuestions}</div><div class="stat-label">${T('lbl_nq')}</div></div>
     <div class="stat-box"><div class="stat-val">${uniqueCodes}</div><div class="stat-label">${T('lbl_codes')}</div></div>
-    <div class="stat-box"><div class="stat-val">5</div><div class="stat-label">${T('lbl_opts')}</div></div>
+    <div class="stat-box"><div class="stat-val">${state.numOptions}</div><div class="stat-label">${T('lbl_opts')}</div></div>
   `;
 
   // CSV preview
@@ -3326,7 +3349,7 @@ function previewExam(idx) {
 }
 
 function resetAll() {
-  state = { apiKey: '', model: 'gpt-4o-mini', material: '', subject: '', numQuestions: 10, difficulty: 'intermedio', examLang: 'español', extraInstructions: '', students: [], concepts: [], examPool: [], generatedExams: [], csvData: '' };
+  state = { apiKey: '', model: 'gpt-4o-mini', material: '', subject: '', numQuestions: 10, numOptions: 5, difficulty: 'intermedio', examLang: 'español', extraInstructions: '', students: [], concepts: [], examPool: [], generatedExams: [], csvData: '' };
   uploadedFiles = [];
   document.getElementById('fileList').innerHTML = '';
   document.getElementById('fileHint').textContent = T('file_hint');
