@@ -692,6 +692,27 @@
     .stats-row { grid-template-columns: 1fr 1fr; }
     .hero h2 { font-size: 24px; }
   }
+
+  /* ── UI language selector ────────────────────────────────────────────── */
+  .ui-lang-select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    padding: 6px 10px;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    appearance: none;
+    -webkit-appearance: none;
+    min-width: 72px;
+    text-align: center;
+  }
+  .ui-lang-select:hover  { border-color: var(--accent2); }
+  .ui-lang-select:focus  { border-color: var(--accent2); box-shadow: 0 0 0 3px rgba(124,92,252,0.12); }
+  @media (max-width: 480px) { .ui-lang-select { display: none; } }
 </style>
 </head>
 <body>
@@ -712,6 +733,36 @@
       <div class="agent-badge" id="badge-validator">Validator</div>
       <div class="agent-badge" id="badge-formatter">Formatter</div>
     </div>
+    <select id="uiLangSelect" class="ui-lang-select" onchange="applyUILang(this.value)" aria-label="Idioma de la aplicación">
+      <option value="es">🇪🇸 ES</option>
+      <option value="ca">🏴 CA</option>
+      <option value="eu">🏴 EU</option>
+      <option value="gl">🏴 GL</option>
+      <option value="oc">🏴 OC</option>
+      <option value="en">🇬🇧 EN</option>
+      <option value="fr">🇫🇷 FR</option>
+      <option value="de">🇩🇪 DE</option>
+      <option value="it">🇮🇹 IT</option>
+      <option value="pt">🇵🇹 PT</option>
+      <option value="nl">🇳🇱 NL</option>
+      <option value="pl">🇵🇱 PL</option>
+      <option value="sv">🇸🇪 SV</option>
+      <option value="da">🇩🇰 DA</option>
+      <option value="fi">🇫🇮 FI</option>
+      <option value="ro">🇷🇴 RO</option>
+      <option value="cs">🇨🇿 CS</option>
+      <option value="el">🇬🇷 EL</option>
+      <option value="hu">🇭🇺 HU</option>
+      <option value="sk">🇸🇰 SK</option>
+      <option value="bg">🇧🇬 BG</option>
+      <option value="hr">🇭🇷 HR</option>
+      <option value="lt">🇱🇹 LT</option>
+      <option value="lv">🇱🇻 LV</option>
+      <option value="et">🇪🇪 ET</option>
+      <option value="sl">🇸🇮 SL</option>
+      <option value="mt">🇲🇹 MT</option>
+      <option value="ga">🇮🇪 GA</option>
+    </select>
     <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Cambiar tema">🌙</button>
   </div>
 </header>
@@ -721,15 +772,15 @@
   <!-- CONFIG SECTION -->
   <div id="section-config">
     <div class="hero">
-      <div class="hero-tag">Sistema Multiagente</div>
-      <h2>Exámenes únicos<br><span>para cada estudiante</span></h2>
-      <p>5 agentes de IA generan, validan y formatean exámenes tipo test personalizados con PDF individual y hoja de respuestas CSV.</p>
+      <div class="hero-tag" id="hero-tag">Sistema Multiagente</div>
+      <h2 id="hero-h2">Exámenes únicos<br><span>para cada estudiante</span></h2>
+      <p id="hero-p">5 agentes de IA generan, validan y formatean exámenes tipo test personalizados con PDF individual y hoja de respuestas CSV.</p>
     </div>
 
     <div class="grid-2">
       <!-- API Key -->
       <div class="card card-full">
-        <div class="card-title"><span class="icon icon-purple">🔑</span> Configuración API</div>
+        <div class="card-title"><span class="icon icon-purple">🔑</span> <span id="card-title-api">Configuración API</span></div>
         <div class="apikey-row">
           <div>
             <label for="apiKey">OpenAI API Key</label>
@@ -749,7 +800,7 @@
               <option value="gpt-4-turbo">GPT-4 Turbo</option>
             </select>
             <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
-              <button class="btn btn-sm" type="button" onclick="cargarModelosDisponibles()">↻ Cargar modelos de mi cuenta</button>
+              <button class="btn btn-sm" id="btn-load-models" type="button" onclick="cargarModelosDisponibles()">↻ Cargar modelos de mi cuenta</button>
               <input type="text" id="modelCustom" placeholder="o escribe el ID exacto"
                      oninput="updateCostEstimate()" style="flex:1;min-width:170px" />
             </div>
@@ -761,7 +812,7 @@
 
       <!-- Materials -->
       <div class="card card-full">
-        <div class="card-title"><span class="icon icon-green">📚</span> Material del Examen</div>
+        <div class="card-title"><span class="icon icon-green">📚</span> <span id="card-title-material">Material del Examen</span></div>
 
         <div class="material-tabs" role="tablist" aria-label="Fuente del material">
           <div class="mtab active" role="tab" aria-selected="true"  aria-controls="mtab-text"  id="tab-text"  onclick="switchMTab('text')"  tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')switchMTab('text')">✏️ Texto</div>
@@ -788,19 +839,19 @@ Los productos son glucosa y oxígeno..."></textarea>
             <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx"
                    onchange="handleFileSelect(event)" />
             <div class="file-drop-icon">📂</div>
-            <div class="file-drop-title">Arrastra archivos aquí o haz clic para seleccionar</div>
-            <div class="file-drop-sub">PDF · DOC · DOCX — múltiples archivos permitidos</div>
+            <div class="file-drop-title" id="file-drop-title">Arrastra archivos aquí o haz clic para seleccionar</div>
+            <div class="file-drop-sub" id="file-drop-sub">PDF · DOC · DOCX — múltiples archivos permitidos</div>
           </div>
           <div class="file-list" id="fileList"></div>
           <p class="hint" id="fileHint">El texto extraído se combinará con el texto manual (si lo hay).</p>
         </div>
 
-        <p class="hint" style="margin-top:8px">Mínimo 200 palabras recomendado para generar 10 preguntas de calidad.</p>
+        <p class="hint" id="hint-material" style="margin-top:8px">Mínimo 200 palabras recomendado para generar preguntas de calidad.</p>
       </div>
 
       <!-- Config -->
       <div class="card">
-        <div class="card-title"><span class="icon icon-orange">⚙️</span> Parámetros del Examen</div>
+        <div class="card-title"><span class="icon icon-orange">⚙️</span> <span id="card-title-params">Parámetros del Examen</span></div>
         <div class="input-row">
           <div id="wrap-subject">
             <label for="subject">Asignatura</label>
@@ -822,21 +873,58 @@ Los productos son glucosa y oxígeno..."></textarea>
         <div style="margin-top:12px">
           <label for="difficulty">Nivel de dificultad</label>
           <select id="difficulty">
-            <option value="básico">Básico</option>
-            <option value="intermedio" selected>Intermedio</option>
-            <option value="avanzado">Avanzado</option>
-            <option value="mixto">Mixto (variado)</option>
+            <option value="básico" id="diff-basic">Básico</option>
+            <option value="intermedio" selected id="diff-mid">Intermedio</option>
+            <option value="avanzado" id="diff-adv">Avanzado</option>
+            <option value="mixto" id="diff-mix">Mixto (variado)</option>
           </select>
         </div>
         <div style="margin-top:12px">
-          <label for="extraInstructions">Instrucciones adicionales al generador</label>
+          <label for="examLang" id="lbl-exam-lang">Idioma del examen</label>
+          <select id="examLang">
+            <optgroup label="🇪🇸 Lenguas cooficiales de España">
+              <option value="español" selected>Español</option>
+              <option value="català">Català</option>
+              <option value="euskara">Euskara</option>
+              <option value="galego">Galego</option>
+              <option value="occitan/aranès">Occitan (Aranès)</option>
+            </optgroup>
+            <optgroup label="🇪🇺 Idiomas oficiales UE">
+              <option value="English">English</option>
+              <option value="français">Français</option>
+              <option value="Deutsch">Deutsch</option>
+              <option value="italiano">Italiano</option>
+              <option value="português">Português</option>
+              <option value="Nederlands">Nederlands</option>
+              <option value="polski">Polski</option>
+              <option value="svenska">Svenska</option>
+              <option value="dansk">Dansk</option>
+              <option value="suomi">Suomi</option>
+              <option value="română">Română</option>
+              <option value="čeština">Čeština</option>
+              <option value="ελληνικά">Ελληνικά</option>
+              <option value="magyar">Magyar</option>
+              <option value="slovenčina">Slovenčina</option>
+              <option value="български">Български</option>
+              <option value="hrvatski">Hrvatski</option>
+              <option value="lietuvių">Lietuvių</option>
+              <option value="latviešu">Latviešu</option>
+              <option value="eesti">Eesti</option>
+              <option value="slovenščina">Slovenščina</option>
+              <option value="Malti">Malti</option>
+              <option value="Gaeilge">Gaeilge</option>
+            </optgroup>
+          </select>
+        </div>
+        <div style="margin-top:12px">
+          <label for="extraInstructions" id="lbl-extra">Instrucciones adicionales al generador</label>
           <input type="text" id="extraInstructions" placeholder="Ej: Incluye preguntas de aplicación práctica..." />
         </div>
       </div>
 
       <!-- Students -->
       <div class="card">
-        <div class="card-title"><span class="icon icon-green">👥</span> Lista de Estudiantes</div>
+        <div class="card-title"><span class="icon icon-green">👥</span> <span id="card-title-students">Lista de Estudiantes</span></div>
         <label for="studentList">Un nombre por línea (o nombre, apellidos)</label>
         <div id="wrap-studentList">
           <textarea class="students-input" id="studentList" aria-required="true" placeholder="Ana García López
@@ -853,10 +941,10 @@ Pablo Jiménez"></textarea>
 
         <!-- Estimación coste/tiempo -->
         <div class="cost-estimate" id="costEstimate" style="display:none" aria-live="polite" aria-label="Estimación de coste y tiempo">
-          <div class="cost-item"><span class="cost-label">Llamadas API</span><span class="cost-val" id="est-calls">—</span></div>
-          <div class="cost-item"><span class="cost-label">Tokens aprox.</span><span class="cost-val" id="est-tokens">—</span></div>
-          <div class="cost-item"><span class="cost-label">Coste aprox.</span><span class="cost-val" id="est-cost">—</span></div>
-          <div class="cost-item"><span class="cost-label">Tiempo aprox.</span><span class="cost-val" id="est-time">—</span></div>
+          <div class="cost-item"><span class="cost-label" id="est-calls-lbl">Llamadas API</span><span class="cost-val" id="est-calls">—</span></div>
+          <div class="cost-item"><span class="cost-label" id="est-tokens-lbl">Tokens aprox.</span><span class="cost-val" id="est-tokens">—</span></div>
+          <div class="cost-item"><span class="cost-label" id="est-cost-lbl">Coste aprox.</span><span class="cost-val" id="est-cost">—</span></div>
+          <div class="cost-item"><span class="cost-label" id="est-time-lbl">Tiempo aprox.</span><span class="cost-val" id="est-time">—</span></div>
         </div>
       </div>
     </div>
@@ -874,8 +962,8 @@ Pablo Jiménez"></textarea>
   <div id="section-progress">
     <div style="text-align:center;padding:40px 0 20px">
       <div class="hero-tag" id="progressTag" aria-live="polite">Inicializando...</div>
-      <h2 style="font-size:32px;font-weight:800;letter-spacing:-1px;margin:16px 0 8px">Pipeline en ejecución</h2>
-      <p style="color:var(--muted)">Los agentes están trabajando. No cierres esta ventana.</p>
+      <h2 id="progress-title" style="font-size:32px;font-weight:800;letter-spacing:-1px;margin:16px 0 8px">Pipeline en ejecución</h2>
+      <p id="progress-sub" style="color:var(--muted)">Los agentes están trabajando. No cierres esta ventana.</p>
       <button class="btn btn-sm" id="btnCancel" onclick="cancelPipeline()"
               style="margin-top:14px;border-color:var(--danger);color:var(--danger)"
               aria-label="Cancelar el pipeline en curso">✕ Cancelar pipeline</button>
@@ -932,22 +1020,22 @@ Pablo Jiménez"></textarea>
   <div id="section-results">
     <div class="results-header">
       <div>
-        <div class="results-title">✅ Exámenes generados</div>
+        <div class="results-title" id="results-title">✅ Exámenes generados</div>
         <p style="color:var(--muted);font-size:13px;margin-top:4px" id="resultsSubtitle"></p>
       </div>
       <div class="results-actions">
-        <button class="btn btn-sm btn-accent" onclick="downloadCSV()">⬇ Descargar CSV</button>
+        <button class="btn btn-sm btn-accent" id="btn-csv" onclick="downloadCSV()">⬇ Descargar CSV</button>
         <button class="btn btn-sm btn-accent" onclick="downloadPDFUnico()">📄 PDF para imprimir (todos)</button>
         <button class="btn btn-sm btn-accent" onclick="downloadPlantillaOMR()">🧩 plantilla_omr.json</button>
         <button class="btn btn-sm" onclick="abrirCorrector()">✅ Corregir escaneos</button>
-        <button class="btn btn-sm" onclick="resetAll()" style="color:var(--muted)">↺ Nueva sesión</button>
+        <button class="btn btn-sm" id="btn-reset" onclick="resetAll()" style="color:var(--muted)">↺ Nueva sesión</button>
       </div>
     </div>
 
     <div class="stats-row" id="statsRow"></div>
 
     <div class="card card-full" style="margin-bottom:24px">
-      <div class="card-title"><span class="icon icon-green">📊</span> CSV — Hoja de respuestas correctas</div>
+      <div class="card-title"><span class="icon icon-green">📊</span> <span id="csv-section-title">CSV — Hoja de respuestas correctas</span></div>
       <div class="csv-preview" id="csvPreview"></div>
     </div>
 
@@ -1607,6 +1695,7 @@ let state = {
   subject: '',
   numQuestions: 10,
   difficulty: 'intermedio',
+  examLang: 'español',
   extraInstructions: '',
   students: [],
   concepts: [],
@@ -1628,6 +1717,397 @@ function switchMTab(tab) {
 }
 
 // ─── Material text counter ──────────────────────────────────────────────────
+
+// ─── i18n dictionary ─────────────────────────────────────────────────────────
+const I18N = {
+  es: {
+    hero_tag:'Sistema Multiagente', hero_h2:'Exámenes únicos<br><span>para cada estudiante</span>',
+    hero_p:'5 agentes de IA generan, validan y formatean exámenes tipo test personalizados con PDF individual y hoja de respuestas CSV.',
+    card_api:'Configuración API', lbl_apikey:'OpenAI API Key',
+    hint_apikey:'🔒 La clave se guarda en tu navegador (localStorage) y nunca sale de él.',
+    hint_material:'Mínimo 200 palabras recomendado para generar preguntas de calidad.',
+    card_material:'Material del Examen', tab_text:'✏️ Texto', tab_files:'📎 Archivos PDF / Word',
+    ph_material:'Pega aquí el contenido del tema: apuntes, esquemas, texto del libro...',
+    card_params:'Parámetros del Examen', lbl_subject:'Asignatura', ph_subject:'Ej: Biología Celular',
+    lbl_questions:'Nº de preguntas', lbl_difficulty:'Nivel de dificultad',
+    diff_basic:'Básico', diff_mid:'Intermedio', diff_adv:'Avanzado', diff_mix:'Mixto (variado)',
+    lbl_exam_lang:'Idioma del examen',
+    lbl_extra:'Instrucciones adicionales al generador', ph_extra:'Ej: Incluye preguntas de aplicación práctica...',
+    card_students:'Lista de Estudiantes', lbl_students:'Un nombre por línea (o nombre, apellidos)',
+    ph_students:'Ana García López\nCarlos Martínez\nElena Rodríguez Pérez',
+    lbl_calls:'Llamadas API', lbl_tokens:'Tokens aprox.', lbl_cost:'Coste aprox.', lbl_time:'Tiempo aprox.',
+    btn_generate:'Iniciar Pipeline Multiagente',
+    progress_title:'Pipeline en ejecución', progress_sub:'Los agentes están trabajando. No cierres esta ventana.',
+    btn_cancel:'✕ Cancelar pipeline',
+    results_title:'✅ Exámenes generados', btn_csv:'⬇ Descargar CSV', btn_reset:'↺ Nueva sesión',
+    lbl_exams:'Exámenes', lbl_nq:'Preguntas', lbl_codes:'Códigos únicos', lbl_opts:'Opciones/pregunta',
+    csv_title:'CSV — Hoja de respuestas correctas',
+    err_apikey:'Introduce tu API Key de OpenAI', err_subject:'Escribe el nombre de la asignatura', err_students:'Añade al menos un estudiante',
+    file_drop_title:'Arrastra archivos aquí o haz clic para seleccionar', file_drop_sub:'PDF · DOC · DOCX — múltiples archivos permitidos',
+    file_hint:'El texto extraído se combinará con el texto manual (si lo hay).',
+    student_count_zero:'0 estudiantes detectados',
+    student_count_n:(n) => `${n} estudiante${n!==1?'s':''} detectado${n!==1?'s':''}`,
+    chars_label:'caracteres', model_load:'↻ Cargar modelos de mi cuenta',
+  },
+  ca: {
+    hero_tag:'Sistema Multiagent', hero_h2:'Exàmens únics<br><span>per a cada estudiant</span>',
+    hero_p:'5 agents d\'IA generen, validen i formaten exàmens tipus test personalitzats amb PDF individual i full de respostes CSV.',
+    card_api:'Configuració API', lbl_apikey:'Clau API d\'OpenAI',
+    hint_apikey:'🔒 La clau es guarda al teu navegador (localStorage) i mai no en surt.',
+    hint_material:'Mínim 200 paraules recomanat per generar preguntes de qualitat.',
+    card_material:'Material de l\'Examen', tab_text:'✏️ Text', tab_files:'📎 Arxius PDF / Word',
+    ph_material:'Enganxa aquí el contingut del tema: apunts, esquemes, text del llibre...',
+    card_params:'Paràmetres de l\'Examen', lbl_subject:'Assignatura', ph_subject:'Ex: Biologia Cel·lular',
+    lbl_questions:'Nombre de preguntes', lbl_difficulty:'Nivell de dificultat',
+    diff_basic:'Bàsic', diff_mid:'Intermedi', diff_adv:'Avançat', diff_mix:'Mixt (variat)',
+    lbl_exam_lang:'Idioma de l\'examen',
+    lbl_extra:'Instruccions addicionals al generador', ph_extra:'Ex: Inclou preguntes d\'aplicació pràctica...',
+    card_students:'Llista d\'Estudiants', lbl_students:'Un nom per línia (o nom, cognoms)',
+    ph_students:'Anna Garcia\nCarles Martínez\nElena Rodríguez',
+    lbl_calls:'Crides API', lbl_tokens:'Tokens aprox.', lbl_cost:'Cost aprox.', lbl_time:'Temps aprox.',
+    btn_generate:'Iniciar Pipeline Multiagent',
+    progress_title:'Pipeline en execució', progress_sub:'Els agents estan treballant. No tanquis aquesta finestra.',
+    btn_cancel:'✕ Cancel·lar pipeline',
+    results_title:'✅ Exàmens generats', btn_csv:'⬇ Descarregar CSV', btn_reset:'↺ Nova sessió',
+    lbl_exams:'Exàmens', lbl_nq:'Preguntes', lbl_codes:'Codis únics', lbl_opts:'Opcions/pregunta',
+    csv_title:'CSV — Full de respostes correctes',
+    err_apikey:'Introdueix la teva clau API d\'OpenAI', err_subject:'Escriu el nom de l\'assignatura', err_students:'Afegeix almenys un estudiant',
+    file_drop_title:'Arrossega arxius aquí o fes clic per seleccionar', file_drop_sub:'PDF · DOC · DOCX — múltiples arxius permesos',
+    file_hint:'El text extret es combinarà amb el text manual (si n\'hi ha).',
+    student_count_zero:'0 estudiants detectats',
+    student_count_n:(n) => `${n} estudiant${n!==1?'s':''} detectat${n!==1?'s':''}`,
+    chars_label:'caràcters', model_load:'↻ Carregar models del meu compte',
+  },
+  eu: {
+    hero_tag:'Sistema Multiagentea', hero_h2:'Azterketa bakarrak<br><span>ikasle bakoitzarentzat</span>',
+    hero_p:'5 AA agenteak test motatako azterketa pertsonalizatuak sortzen, baliozkotzen eta formateatzen dituzte PDF eta CSV erantzun-orriarekin.',
+    card_api:'API Konfigurazioa', lbl_apikey:'OpenAI API Gakoa',
+    hint_apikey:'🔒 Gakoa nabigatzailean gordetzen da eta ez da inoiz atera.',
+    hint_material:'200 hitz gutxienez gomendatzen da kalitatzeko galderak sortzeko.',
+    card_material:'Azterketa Materiala', tab_text:'✏️ Testua', tab_files:'📎 PDF / Word Fitxategiak',
+    ph_material:'Itsatsi hemen gaiaren edukia: apunteak, eskemak, liburuaren testua...',
+    card_params:'Azterketa Parametroak', lbl_subject:'Ikasgaia', ph_subject:'Adib: Biologia Zelularra',
+    lbl_questions:'Galdera kopurua', lbl_difficulty:'Zailtasun maila',
+    diff_basic:'Oinarrizkoa', diff_mid:'Ertaina', diff_adv:'Aurreratua', diff_mix:'Mistoa',
+    lbl_exam_lang:'Azterketa hizkuntza',
+    lbl_extra:'Sortzailearen argibide gehigarriak', ph_extra:'Adib: Aplikazio praktikoko galderak...',
+    card_students:'Ikasleen Zerrenda', lbl_students:'Izen bat lerro bakoitzeko',
+    ph_students:'Ane Garcia\nKarlos Martinez\nElena Rodriguez',
+    lbl_calls:'API Deiak', lbl_tokens:'Tokenak gutxi gora behera', lbl_cost:'Kostua g.g.b.', lbl_time:'Denbora g.g.b.',
+    btn_generate:'Pipeline Multiagentea Hasi',
+    progress_title:'Pipeline exekuzioan', progress_sub:'Agenteak lanean ari dira. Ez itxi leiho hau.',
+    btn_cancel:'✕ Pipelines utzi',
+    results_title:'✅ Azterketak sortuta', btn_csv:'⬇ CSV Deskargatu', btn_reset:'↺ Saio berria',
+    lbl_exams:'Azterketak', lbl_nq:'Galderak', lbl_codes:'Kode bakarrak', lbl_opts:'Aukerak/galdera',
+    csv_title:'CSV — Erantzun zuzenak',
+    err_apikey:'Sartu zure OpenAI API gakoa', err_subject:'Idatzi ikasgaiaren izena', err_students:'Gehitu gutxienez ikasle bat',
+    file_drop_title:'Arrastatu fitxategiak hona edo egin klik hautatzeko', file_drop_sub:'PDF · DOC · DOCX — fitxategi anitz onartzen dira',
+    file_hint:'Ateratako testua eskuzko testuarekin konbinatuko da.',
+    student_count_zero:'0 ikasle detektatu',
+    student_count_n:(n) => `${n} ikasle detektatu`,
+    chars_label:'karaktere', model_load:'↻ Nire kontuaren ereduak kargatu',
+  },
+  gl: {
+    hero_tag:'Sistema Multiaxente', hero_h2:'Exames únicos<br><span>para cada estudante</span>',
+    hero_p:'5 axentes de IA xeran, validan e formatean exames tipo test personalizados con PDF individual e folla de respostas CSV.',
+    card_api:'Configuración API', lbl_apikey:'Chave API de OpenAI',
+    hint_apikey:'🔒 A chave gárdase no teu navegador (localStorage) e nunca sae del.',
+    hint_material:'Mínimo 200 palabras recomendado para xerar preguntas de calidade.',
+    card_material:'Material do Exame', tab_text:'✏️ Texto', tab_files:'📎 Ficheiros PDF / Word',
+    ph_material:'Pega aquí o contido do tema: apuntamentos, esquemas, texto do libro...',
+    card_params:'Parámetros do Exame', lbl_subject:'Materia', ph_subject:'Ex: Bioloxía Celular',
+    lbl_questions:'Nº de preguntas', lbl_difficulty:'Nivel de dificultade',
+    diff_basic:'Básico', diff_mid:'Intermedio', diff_adv:'Avanzado', diff_mix:'Mixto (variado)',
+    lbl_exam_lang:'Idioma do exame',
+    lbl_extra:'Instrucións adicionais ao xerador', ph_extra:'Ex: Inclúe preguntas de aplicación práctica...',
+    card_students:'Lista de Estudantes', lbl_students:'Un nome por liña (ou nome, apelidos)',
+    ph_students:'Ana García\nCarlos Martínez\nElena Rodríguez',
+    lbl_calls:'Chamadas API', lbl_tokens:'Tokens aprox.', lbl_cost:'Custo aprox.', lbl_time:'Tempo aprox.',
+    btn_generate:'Iniciar Pipeline Multiaxente',
+    progress_title:'Pipeline en execución', progress_sub:'Os axentes están traballando. Non peches esta xanela.',
+    btn_cancel:'✕ Cancelar pipeline',
+    results_title:'✅ Exames xerados', btn_csv:'⬇ Descargar CSV', btn_reset:'↺ Nova sesión',
+    lbl_exams:'Exames', lbl_nq:'Preguntas', lbl_codes:'Códigos únicos', lbl_opts:'Opcións/pregunta',
+    csv_title:'CSV — Folla de respostas correctas',
+    err_apikey:'Introduce a túa chave API de OpenAI', err_subject:'Escribe o nome da materia', err_students:'Engade polo menos un estudante',
+    file_drop_title:'Arrastra ficheiros aquí ou fai clic para seleccionar', file_drop_sub:'PDF · DOC · DOCX — múltiples ficheiros permitidos',
+    file_hint:'O texto extraído combinarase co texto manual (se o hai).',
+    student_count_zero:'0 estudantes detectados',
+    student_count_n:(n) => `${n} estudante${n!==1?'s':''} detectado${n!==1?'s':''}`,
+    chars_label:'caracteres', model_load:'↻ Cargar modelos da miña conta',
+  },
+  oc: {
+    hero_tag:'Sistèma Multi-agent', hero_h2:'Examens únics<br><span>per a cada estudiant</span>',
+    hero_p:'5 agents d\'IA genèran, validan e formatan examens de tèst personalizats amb PDF e fuèlha de respostas CSV.',
+    card_api:'Configuracion API', lbl_apikey:'Clau API d\'OpenAI',
+    hint_apikey:'🔒 La clau es gardada dins lo navegador e non sòrt jamai.',
+    hint_material:'Minim 200 mots recomandat per generar preguntas de qualitat.',
+    card_material:'Material de l\'Examen', tab_text:'✏️ Tèxt', tab_files:'📎 Fichièrs PDF / Word',
+    ph_material:'Cola aquí lo contengut del tèma: nòtas, esquèmas, tèxt del libre...',
+    card_params:'Paramètres de l\'Examen', lbl_subject:'Matèria', ph_subject:'Ex: Biologia Cel·lulara',
+    lbl_questions:'Nombre de preguntas', lbl_difficulty:'Nivel de dificultат',
+    diff_basic:'Basic', diff_mid:'Intermediari', diff_adv:'Avançat', diff_mix:'Mèste (variat)',
+    lbl_exam_lang:'Lenga de l\'examen',
+    lbl_extra:'Instruccions adicionaus al generator', ph_extra:'Ex: Inclure preguntas d\'aplicacion practica...',
+    card_students:'Lista d\'Estudiants', lbl_students:'Un nom per linha (o nom, cognoms)',
+    ph_students:'Ana Garcia\nCarles Martínez\nElena Rodríguez',
+    lbl_calls:'Crides API', lbl_tokens:'Tokens aprox.', lbl_cost:'Cost aprox.', lbl_time:'Temps aprox.',
+    btn_generate:'Iniciar Pipeline Multi-agent',
+    progress_title:'Pipeline en execucion', progress_sub:'Los agents trabalhan. Non tampes aqueste fenèstre.',
+    btn_cancel:'✕ Anudar lo pipeline',
+    results_title:'✅ Examens generats', btn_csv:'⬇ Telecargat CSV', btn_reset:'↺ Novèla session',
+    lbl_exams:'Examens', lbl_nq:'Preguntas', lbl_codes:'Còdes unics', lbl_opts:'Opcions/pregunta',
+    csv_title:'CSV — Fuèlha de respostas correctas',
+    err_apikey:'Intròdusetz la vòstra clau API d\'OpenAI', err_subject:'Escrivetz lo nom de la matèria', err_students:'Apondetz almens un estudiant',
+    file_drop_title:'Tira fichièrs ici o clica per seleccionar', file_drop_sub:'PDF · DOC · DOCX — plurals fichièrs autoritzats',
+    file_hint:'Lo tèxt extragut serà combinat amb lo tèxt manual (se n\'i a).',
+    student_count_zero:'0 estudiants detectats',
+    student_count_n:(n) => `${n} estudiant${n!==1?'s':''} detectat${n!==1?'s':''}`,
+    chars_label:'caractèrs', model_load:'↻ Cargar models del meu compte',
+  },
+  en: {
+    hero_tag:'Multi-Agent System', hero_h2:'Unique exams<br><span>for every student</span>',
+    hero_p:'5 AI agents generate, validate and format personalised multiple-choice exams with individual PDFs and a CSV answer key.',
+    card_api:'API Configuration', lbl_apikey:'OpenAI API Key',
+    hint_apikey:'🔒 Your key is stored in your browser (localStorage) and never leaves it.',
+    hint_material:'At least 200 words recommended to generate quality questions.',
+    card_material:'Exam Material', tab_text:'✏️ Text', tab_files:'📎 PDF / Word Files',
+    ph_material:'Paste the topic content here: notes, outlines, textbook text...',
+    card_params:'Exam Parameters', lbl_subject:'Subject', ph_subject:'E.g. Cell Biology',
+    lbl_questions:'Number of questions', lbl_difficulty:'Difficulty level',
+    diff_basic:'Basic', diff_mid:'Intermediate', diff_adv:'Advanced', diff_mix:'Mixed (varied)',
+    lbl_exam_lang:'Exam language',
+    lbl_extra:'Additional instructions for the generator', ph_extra:'E.g. Include applied practice questions...',
+    card_students:'Student List', lbl_students:'One name per line (or first name, surname)',
+    ph_students:'Alice Smith\nBob Johnson\nCarol Williams',
+    lbl_calls:'API Calls', lbl_tokens:'Approx. tokens', lbl_cost:'Approx. cost', lbl_time:'Approx. time',
+    btn_generate:'Start Multi-Agent Pipeline',
+    progress_title:'Pipeline running', progress_sub:'Agents are working. Do not close this window.',
+    btn_cancel:'✕ Cancel pipeline',
+    results_title:'✅ Exams generated', btn_csv:'⬇ Download CSV', btn_reset:'↺ New session',
+    lbl_exams:'Exams', lbl_nq:'Questions', lbl_codes:'Unique codes', lbl_opts:'Options/question',
+    csv_title:'CSV — Correct answer key',
+    err_apikey:'Enter your OpenAI API Key', err_subject:'Enter the subject name', err_students:'Add at least one student',
+    file_drop_title:'Drag files here or click to select', file_drop_sub:'PDF · DOC · DOCX — multiple files allowed',
+    file_hint:'Extracted text will be combined with any manually entered text.',
+    student_count_zero:'0 students detected',
+    student_count_n:(n) => `${n} student${n!==1?'s':''} detected`,
+    chars_label:'characters', model_load:'↻ Load models from my account',
+  },
+  fr: {
+    hero_tag:'Système Multi-Agents', hero_h2:'Examens uniques<br><span>pour chaque étudiant</span>',
+    hero_p:'5 agents IA génèrent, valident et mettent en forme des examens QCM personnalisés avec PDF individuel et feuille de réponses CSV.',
+    card_api:'Configuration API', lbl_apikey:'Clé API OpenAI',
+    hint_apikey:'🔒 La clé est stockée dans votre navigateur (localStorage) et n\'en sort jamais.',
+    hint_material:'Minimum 200 mots recommandés pour générer des questions de qualité.',
+    card_material:'Matériel d\'Examen', tab_text:'✏️ Texte', tab_files:'📎 Fichiers PDF / Word',
+    ph_material:'Collez ici le contenu du cours : notes, schémas, texte du manuel...',
+    card_params:'Paramètres de l\'Examen', lbl_subject:'Matière', ph_subject:'Ex : Biologie Cellulaire',
+    lbl_questions:'Nombre de questions', lbl_difficulty:'Niveau de difficulté',
+    diff_basic:'Basique', diff_mid:'Intermédiaire', diff_adv:'Avancé', diff_mix:'Mixte (varié)',
+    lbl_exam_lang:'Langue de l\'examen',
+    lbl_extra:'Instructions supplémentaires au générateur', ph_extra:'Ex : Inclure des questions d\'application pratique...',
+    card_students:'Liste des Étudiants', lbl_students:'Un nom par ligne (ou prénom, nom)',
+    ph_students:'Alice Dupont\nBob Martin\nCarole Bernard',
+    lbl_calls:'Appels API', lbl_tokens:'Tokens aprox.', lbl_cost:'Coût aprox.', lbl_time:'Temps aprox.',
+    btn_generate:'Lancer le Pipeline Multi-Agents',
+    progress_title:'Pipeline en cours', progress_sub:'Les agents travaillent. Ne fermez pas cette fenêtre.',
+    btn_cancel:'✕ Annuler le pipeline',
+    results_title:'✅ Examens générés', btn_csv:'⬇ Télécharger CSV', btn_reset:'↺ Nouvelle session',
+    lbl_exams:'Examens', lbl_nq:'Questions', lbl_codes:'Codes uniques', lbl_opts:'Options/question',
+    csv_title:'CSV — Feuille de réponses correctes',
+    err_apikey:'Entrez votre clé API OpenAI', err_subject:'Entrez le nom de la matière', err_students:'Ajoutez au moins un étudiant',
+    file_drop_title:'Glissez des fichiers ici ou cliquez pour sélectionner', file_drop_sub:'PDF · DOC · DOCX — plusieurs fichiers autorisés',
+    file_hint:'Le texte extrait sera combiné avec le texte saisi manuellement.',
+    student_count_zero:'0 étudiant détecté',
+    student_count_n:(n) => `${n} étudiant${n!==1?'s':''} détecté${n!==1?'s':''}`,
+    chars_label:'caractères', model_load:'↻ Charger les modèles de mon compte',
+  },
+  de: {
+    hero_tag:'Multi-Agenten-System', hero_h2:'Einzigartige Prüfungen<br><span>für jeden Studierenden</span>',
+    hero_p:'5 KI-Agenten erstellen, validieren und formatieren personalisierte Multiple-Choice-Prüfungen mit PDFs und CSV-Antwortliste.',
+    card_api:'API-Konfiguration', lbl_apikey:'OpenAI API-Schlüssel',
+    hint_apikey:'🔒 Der Schlüssel wird in Ihrem Browser gespeichert und verlässt ihn nie.',
+    hint_material:'Mindestens 200 Wörter empfohlen für qualitativ hochwertige Fragen.',
+    card_material:'Prüfungsmaterial', tab_text:'✏️ Text', tab_files:'📎 PDF / Word-Dateien',
+    ph_material:'Fügen Sie hier den Themeninhalt ein: Notizen, Skizzen, Lehrbuchtext...',
+    card_params:'Prüfungsparameter', lbl_subject:'Fach', ph_subject:'Z.B. Zellbiologie',
+    lbl_questions:'Anzahl der Fragen', lbl_difficulty:'Schwierigkeitsgrad',
+    diff_basic:'Grundlegend', diff_mid:'Mittel', diff_adv:'Fortgeschritten', diff_mix:'Gemischt',
+    lbl_exam_lang:'Prüfungssprache',
+    lbl_extra:'Zusätzliche Anweisungen an den Generator', ph_extra:'Z.B. Praxisbezogene Fragen einbeziehen...',
+    card_students:'Studierendenliste', lbl_students:'Ein Name pro Zeile (oder Vorname, Nachname)',
+    ph_students:'Anna Schmidt\nBernd Müller\nClaudia Weber',
+    lbl_calls:'API-Aufrufe', lbl_tokens:'Ca. Tokens', lbl_cost:'Ca. Kosten', lbl_time:'Ca. Zeit',
+    btn_generate:'Multi-Agenten-Pipeline starten',
+    progress_title:'Pipeline läuft', progress_sub:'Die Agenten arbeiten. Schließen Sie dieses Fenster nicht.',
+    btn_cancel:'✕ Pipeline abbrechen',
+    results_title:'✅ Prüfungen erstellt', btn_csv:'⬇ CSV herunterladen', btn_reset:'↺ Neue Sitzung',
+    lbl_exams:'Prüfungen', lbl_nq:'Fragen', lbl_codes:'Eindeutige Codes', lbl_opts:'Optionen/Frage',
+    csv_title:'CSV — Korrekte Antwortliste',
+    err_apikey:'Geben Sie Ihren OpenAI API-Schlüssel ein', err_subject:'Geben Sie den Fachnamen ein', err_students:'Fügen Sie mindestens einen Studierenden hinzu',
+    file_drop_title:'Dateien hierher ziehen oder zum Auswählen klicken', file_drop_sub:'PDF · DOC · DOCX — mehrere Dateien erlaubt',
+    file_hint:'Extrahierter Text wird mit manuell eingegebenem Text kombiniert.',
+    student_count_zero:'0 Studierende erkannt',
+    student_count_n:(n) => `${n} Studierende erkannt`,
+    chars_label:'Zeichen', model_load:'↻ Modelle meines Kontos laden',
+  },
+  it: {
+    hero_tag:'Sistema Multi-Agente', hero_h2:'Esami unici<br><span>per ogni studente</span>',
+    hero_p:'5 agenti IA generano, validano e formattano esami a risposta multipla personalizzati con PDF individuale e foglio risposte CSV.',
+    card_api:'Configurazione API', lbl_apikey:'Chiave API OpenAI',
+    hint_apikey:'🔒 La chiave è salvata nel browser (localStorage) e non lo abbandona mai.',
+    hint_material:'Minimo 200 parole raccomandate per generare domande di qualità.',
+    card_material:'Materiale d\'Esame', tab_text:'✏️ Testo', tab_files:'📎 File PDF / Word',
+    ph_material:'Incolla qui il contenuto del tema: appunti, schemi, testo del libro...',
+    card_params:'Parametri dell\'Esame', lbl_subject:'Materia', ph_subject:'Es: Biologia Cellulare',
+    lbl_questions:'N. di domande', lbl_difficulty:'Livello di difficoltà',
+    diff_basic:'Base', diff_mid:'Intermedio', diff_adv:'Avanzato', diff_mix:'Misto (variato)',
+    lbl_exam_lang:'Lingua dell\'esame',
+    lbl_extra:'Istruzioni aggiuntive al generatore', ph_extra:'Es: Includi domande di applicazione pratica...',
+    card_students:'Elenco Studenti', lbl_students:'Un nome per riga (o nome, cognome)',
+    ph_students:'Anna Rossi\nBruno Ferrari\nClaudia Bianchi',
+    lbl_calls:'Chiamate API', lbl_tokens:'Token ca.', lbl_cost:'Costo ca.', lbl_time:'Tempo ca.',
+    btn_generate:'Avvia Pipeline Multi-Agente',
+    progress_title:'Pipeline in esecuzione', progress_sub:'Gli agenti stanno lavorando. Non chiudere questa finestra.',
+    btn_cancel:'✕ Annulla pipeline',
+    results_title:'✅ Esami generati', btn_csv:'⬇ Scarica CSV', btn_reset:'↺ Nuova sessione',
+    lbl_exams:'Esami', lbl_nq:'Domande', lbl_codes:'Codici unici', lbl_opts:'Opzioni/domanda',
+    csv_title:'CSV — Foglio risposte corrette',
+    err_apikey:'Inserisci la tua chiave API OpenAI', err_subject:'Scrivi il nome della materia', err_students:'Aggiungi almeno uno studente',
+    file_drop_title:'Trascina i file qui o clicca per selezionare', file_drop_sub:'PDF · DOC · DOCX — più file consentiti',
+    file_hint:'Il testo estratto sarà combinato con il testo manuale (se presente).',
+    student_count_zero:'0 studenti rilevati',
+    student_count_n:(n) => `${n} student${n!==1?'i':'e'} rilevat${n!==1?'i':'a'}`,
+    chars_label:'caratteri', model_load:'↻ Carica modelli del mio account',
+  },
+  pt: {
+    hero_tag:'Sistema Multi-Agente', hero_h2:'Exames únicos<br><span>para cada estudante</span>',
+    hero_p:'5 agentes de IA geram, validam e formatam exames de escolha múltipla personalizados com PDF individual e folha de respostas CSV.',
+    card_api:'Configuração API', lbl_apikey:'Chave API OpenAI',
+    hint_apikey:'🔒 A chave é guardada no seu navegador (localStorage) e nunca sai dele.',
+    hint_material:'Mínimo de 200 palavras recomendado para gerar perguntas de qualidade.',
+    card_material:'Material do Exame', tab_text:'✏️ Texto', tab_files:'📎 Ficheiros PDF / Word',
+    ph_material:'Cole aqui o conteúdo do tema: apontamentos, esquemas, texto do livro...',
+    card_params:'Parâmetros do Exame', lbl_subject:'Disciplina', ph_subject:'Ex: Biologia Celular',
+    lbl_questions:'Nº de perguntas', lbl_difficulty:'Nível de dificuldade',
+    diff_basic:'Básico', diff_mid:'Intermédio', diff_adv:'Avançado', diff_mix:'Misto (variado)',
+    lbl_exam_lang:'Idioma do exame',
+    lbl_extra:'Instruções adicionais ao gerador', ph_extra:'Ex: Incluir perguntas de aplicação prática...',
+    card_students:'Lista de Estudantes', lbl_students:'Um nome por linha (ou nome, apelido)',
+    ph_students:'Ana Garcia\nCarlos Martínez\nElena Rodríguez',
+    lbl_calls:'Chamadas API', lbl_tokens:'Tokens aprox.', lbl_cost:'Custo aprox.', lbl_time:'Tempo aprox.',
+    btn_generate:'Iniciar Pipeline Multi-Agente',
+    progress_title:'Pipeline em execução', progress_sub:'Os agentes estão a trabalhar. Não feche esta janela.',
+    btn_cancel:'✕ Cancelar pipeline',
+    results_title:'✅ Exames gerados', btn_csv:'⬇ Descarregar CSV', btn_reset:'↺ Nova sessão',
+    lbl_exams:'Exames', lbl_nq:'Perguntas', lbl_codes:'Códigos únicos', lbl_opts:'Opções/pergunta',
+    csv_title:'CSV — Folha de respostas correctas',
+    err_apikey:'Introduza a sua chave API OpenAI', err_subject:'Escreva o nome da disciplina', err_students:'Adicione pelo menos um estudante',
+    file_drop_title:'Arraste ficheiros aqui ou clique para seleccionar', file_drop_sub:'PDF · DOC · DOCX — múltiplos ficheiros permitidos',
+    file_hint:'O texto extraído será combinado com o texto manual (se existir).',
+    student_count_zero:'0 estudantes detectados',
+    student_count_n:(n) => `${n} estudante${n!==1?'s':''} detectado${n!==1?'s':''}`,
+    chars_label:'caracteres', model_load:'↻ Carregar modelos da minha conta',
+  },
+};
+// Remaining EU languages default to English
+['nl','pl','sv','da','fi','ro','cs','el','hu','sk','bg','hr','lt','lv','et','sl','mt','ga'].forEach(code => {
+  if (!I18N[code]) I18N[code] = { ...I18N['en'] };
+});
+
+let currentUILang = 'es';
+
+const I18N_MAP = [
+  ['#hero-tag',            'hero_tag'],
+  ['#hero-h2',             'hero_h2',    'innerHTML'],
+  ['#hero-p',              'hero_p'],
+  ['#card-title-api',      'card_api'],
+  ['label[for="apiKey"]',  'lbl_apikey'],
+  ['#apikey-hint',         'hint_apikey'],
+  ['#hint-material',       'hint_material'],
+  ['#card-title-material', 'card_material'],
+  ['#tab-text',            'tab_text'],
+  ['#tab-files',           'tab_files'],
+  ['#material',            'ph_material', 'placeholder'],
+  ['#card-title-params',   'card_params'],
+  ['label[for="subject"]', 'lbl_subject'],
+  ['#subject',             'ph_subject',  'placeholder'],
+  ['label[for="numQuestions"]', 'lbl_questions'],
+  ['label[for="difficulty"]',   'lbl_difficulty'],
+  ['#diff-basic',          'diff_basic'],
+  ['#diff-mid',            'diff_mid'],
+  ['#diff-adv',            'diff_adv'],
+  ['#diff-mix',            'diff_mix'],
+  ['#lbl-exam-lang',       'lbl_exam_lang'],
+  ['#lbl-extra',           'lbl_extra'],
+  ['#extraInstructions',   'ph_extra',    'placeholder'],
+  ['#card-title-students', 'card_students'],
+  ['label[for="studentList"]', 'lbl_students'],
+  ['#est-calls-lbl',       'lbl_calls'],
+  ['#est-tokens-lbl',      'lbl_tokens'],
+  ['#est-cost-lbl',        'lbl_cost'],
+  ['#est-time-lbl',        'lbl_time'],
+  ['#btnText',             'btn_generate'],
+  ['#progress-title',      'progress_title'],
+  ['#progress-sub',        'progress_sub'],
+  ['#btnCancel',           'btn_cancel'],
+  ['#results-title',       'results_title'],
+  ['#btn-csv',             'btn_csv'],
+  ['#btn-reset',           'btn_reset'],
+  ['#csv-section-title',   'csv_title'],
+  ['#err-apiKey',          'err_apikey'],
+  ['#err-subject',         'err_subject'],
+  ['#err-studentList',     'err_students'],
+  ['#file-drop-title',     'file_drop_title'],
+  ['#file-drop-sub',       'file_drop_sub'],
+  ['#fileHint',            'file_hint'],
+  ['#studentCount',        'student_count_zero'],
+  ['#btn-load-models',     'model_load'],
+];
+
+function applyUILang(lang) {
+  const t = I18N[lang] || I18N['es'];
+  currentUILang = lang;
+  localStorage.setItem('examforge_uilang', lang);
+  const sel = document.getElementById('uiLangSelect');
+  if (sel) sel.value = lang;
+
+  I18N_MAP.forEach(([selector, key, attr]) => {
+    const el = document.querySelector(selector);
+    if (!el || !t[key]) return;
+    if (attr === 'innerHTML') el.innerHTML = t[key];
+    else if (attr === 'placeholder') el.placeholder = t[key];
+    else el.textContent = t[key];
+  });
+
+  // Student list placeholder
+  const stuList = document.getElementById('studentList');
+  if (stuList && t.ph_students) stuList.placeholder = t.ph_students.replace(/\n/g, '\n');
+
+  // Refresh student count
+  const stuCount = document.getElementById('studentCount');
+  if (stuCount) {
+    const n = parseStudents(document.getElementById('studentList')?.value || '').length;
+    stuCount.textContent = n === 0
+      ? t.student_count_zero
+      : (typeof t.student_count_n === 'function' ? t.student_count_n(n) : `${n} students`);
+  }
+
+  // Chars counter label
+  const cc = document.getElementById('charsCounter');
+  if (cc && t.chars_label) {
+    const mat = document.getElementById('material');
+    if (mat) cc.textContent = mat.value.length.toLocaleString() + ' ' + t.chars_label;
+  }
+
+  document.documentElement.lang = lang;
+}
+
+function T(key) {
+  return (I18N[currentUILang] || I18N['es'])[key] || (I18N['es'][key] || key);
+}
+
 // ─── Theme ──────────────────────────────────────────────────────────────────
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
@@ -1817,6 +2297,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const savedTheme = localStorage.getItem('examforge_theme') || 'dark';
   applyTheme(savedTheme);
 
+  // Restore UI language
+  const savedLang = localStorage.getItem('examforge_uilang') || 'es';
+  applyUILang(savedLang);
+
   // Restore API key
   const apiInput = document.getElementById('apiKey');
   const saved = localStorage.getItem('examforge_apikey');
@@ -1826,14 +2310,16 @@ document.addEventListener('DOMContentLoaded', () => {
     clearFieldError('apiKey');
   });
   apiInput.addEventListener('blur', () => {
-    validateField('apiKey', 'wrap-apiKey', 'Introduce tu API Key de OpenAI');
+    validateField('apiKey', 'wrap-apiKey', T('err_apikey'));
   });
 
   // Chars counter + cost update on material change
   const mat = document.getElementById('material');
   if (mat) {
     mat.addEventListener('input', () => {
-      document.getElementById('charsCounter').textContent = mat.value.length.toLocaleString('es') + ' caracteres';
+      const t = I18N[currentUILang] || I18N['es'];
+      document.getElementById('charsCounter').textContent =
+        mat.value.length.toLocaleString() + ' ' + (t.chars_label || 'caracteres');
       updateCostEstimate();
     });
   }
@@ -1841,7 +2327,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Blur validation on subject
   const subj = document.getElementById('subject');
   if (subj) {
-    subj.addEventListener('blur',  () => validateField('subject', 'wrap-subject', 'Escribe el nombre de la asignatura'));
+    subj.addEventListener('blur',  () => validateField('subject', 'wrap-subject', T('err_subject')));
     subj.addEventListener('input', () => clearFieldError('subject'));
   }
 
@@ -1850,14 +2336,16 @@ document.addEventListener('DOMContentLoaded', () => {
   if (stuList) {
     stuList.addEventListener('input', () => {
       const students = parseStudents(stuList.value);
-      document.getElementById('studentCount').textContent =
-        `${students.length} estudiante${students.length !== 1 ? 's' : ''} detectado${students.length !== 1 ? 's' : ''}`;
+      const t = I18N[currentUILang] || I18N['es'];
+      document.getElementById('studentCount').textContent = students.length === 0
+        ? t.student_count_zero
+        : (typeof t.student_count_n === 'function' ? t.student_count_n(students.length) : `${students.length} students`);
       if (students.length > 0) clearFieldError('studentList');
       updateCostEstimate();
     });
     stuList.addEventListener('blur', () => {
       const students = parseStudents(stuList.value);
-      if (students.length === 0) validateField('studentList', 'wrap-studentList', 'Añade al menos un estudiante');
+      if (students.length === 0) validateField('studentList', 'wrap-studentList', T('err_students'));
     });
   }
 });
@@ -2195,6 +2683,7 @@ ANÁLISIS COMPLETO DEL TEMA (extraído del material completo):
 PARÁMETROS:
 - Preguntas por set: ${N}
 - Dificultad: ${state.difficulty}
+- Idioma del examen: ${state.examLang} (IMPORTANTE: genera todas las preguntas y opciones en ${state.examLang})
 - Instrucciones extra: ${state.extraInstructions || 'Ninguna'}
 
 DISTRIBUCIÓN OBLIGATORIA DE RESPUESTAS CORRECTAS para el primer set (respeta este orden exacto):
@@ -2715,6 +3204,7 @@ async function startGeneration() {
   state.subject = subject;
   state.numQuestions = parseInt(document.getElementById('numQuestions').value) || 10;
   state.difficulty = document.getElementById('difficulty').value;
+  state.examLang = document.getElementById('examLang').value;
   state.extraInstructions = document.getElementById('extraInstructions').value;
   state.students = students;
   state.examPool = [];
@@ -2768,10 +3258,10 @@ function showResults() {
   // Stats
   const uniqueCodes = new Set(state.generatedExams.map(e => e.code)).size;
   document.getElementById('statsRow').innerHTML = `
-    <div class="stat-box"><div class="stat-val">${state.generatedExams.length}</div><div class="stat-label">Exámenes</div></div>
-    <div class="stat-box"><div class="stat-val">${state.numQuestions}</div><div class="stat-label">Preguntas</div></div>
-    <div class="stat-box"><div class="stat-val">${uniqueCodes}</div><div class="stat-label">Códigos únicos</div></div>
-    <div class="stat-box"><div class="stat-val">5</div><div class="stat-label">Opciones/pregunta</div></div>
+    <div class="stat-box"><div class="stat-val">${state.generatedExams.length}</div><div class="stat-label">${T('lbl_exams')}</div></div>
+    <div class="stat-box"><div class="stat-val">${state.numQuestions}</div><div class="stat-label">${T('lbl_nq')}</div></div>
+    <div class="stat-box"><div class="stat-val">${uniqueCodes}</div><div class="stat-label">${T('lbl_codes')}</div></div>
+    <div class="stat-box"><div class="stat-val">5</div><div class="stat-label">${T('lbl_opts')}</div></div>
   `;
 
   // CSV preview
@@ -2836,12 +3326,12 @@ function previewExam(idx) {
 }
 
 function resetAll() {
-  state = { apiKey: '', model: 'gpt-4o-mini', material: '', subject: '', numQuestions: 10, difficulty: 'intermedio', extraInstructions: '', students: [], concepts: [], examPool: [], generatedExams: [], csvData: '' };
+  state = { apiKey: '', model: 'gpt-4o-mini', material: '', subject: '', numQuestions: 10, difficulty: 'intermedio', examLang: 'español', extraInstructions: '', students: [], concepts: [], examPool: [], generatedExams: [], csvData: '' };
   uploadedFiles = [];
   document.getElementById('fileList').innerHTML = '';
-  document.getElementById('fileHint').textContent = 'El texto extraído se combinará con el texto manual (si lo hay).';
+  document.getElementById('fileHint').textContent = T('file_hint');
   document.getElementById('fileHint').style.color = '';
-  document.getElementById('charsCounter').textContent = '0 caracteres';
+  document.getElementById('charsCounter').textContent = '0 ' + T('chars_label');
   document.getElementById('section-results').style.display = 'none';
   document.getElementById('section-progress').style.display = 'none';
   const corr = document.getElementById('section-correccion');
