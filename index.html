@@ -1,6 +1,64 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<script id="gpt6-luna-shim">
+/* gpt-6-luna: modelo por defecto con temperatura=1 (actualización sep-2026).
+   Adapta las peticiones a la API de OpenAI para la familia gpt-6:
+   temperature=1, max_tokens -> max_completion_tokens (con margen para razonamiento)
+   y reintento automático si la API rechaza algún parámetro. */
+(function(){
+  var NEW='gpt-6-luna', OLD='gpt-4o-mini';
+  try{
+    if(!localStorage.getItem('__gpt6_luna_mig_v1')){
+      for(var i=0;i<localStorage.length;i++){
+        var k=localStorage.key(i), v=localStorage.getItem(k);
+        if(v===OLD||v==='"'+OLD+'"'){ localStorage.setItem(k, v.replace(OLD,NEW)); continue; }
+        if(v && v.length<20000 && v.charAt(0)==='{' && v.indexOf(OLD)>=0){
+          try{ var o=JSON.parse(v), ch=false;
+            for(var p in o){ if(o[p]===OLD){ o[p]=NEW; ch=true; } }
+            if(ch) localStorage.setItem(k, JSON.stringify(o));
+          }catch(e){}
+        }
+      }
+      localStorage.setItem('__gpt6_luna_mig_v1','1');
+    }
+  }catch(e){}
+  var of=window.fetch; if(!of) return;
+  function adapt(url,b){
+    if(!b || typeof b.model!=='string' || !/^gpt-6/.test(b.model)) return false;
+    b.temperature=1;
+    ['top_p','frequency_penalty','presence_penalty','logit_bias','logprobs','top_logprobs'].forEach(function(p){ delete b[p]; });
+    if(/chat\/completions/.test(url) && b.max_tokens!=null){
+      if(b.max_completion_tokens==null) b.max_completion_tokens=Math.min(128000, (+b.max_tokens||0)+6000);
+      delete b.max_tokens;
+    }
+    return true;
+  }
+  window.fetch=function(input,init){
+    var url=typeof input==='string'?input:(input&&input.url)||'';
+    if(!/api\.openai\.com\/v1\/(chat\/completions|responses)/.test(url) || !init || typeof init.body!=='string') return of.apply(this,arguments);
+    var b; try{ b=JSON.parse(init.body); }catch(e){ return of.apply(this,arguments); }
+    if(!adapt(url,b)) return of.apply(this,arguments);
+    var self=this, tries=0;
+    function go(){
+      var ini=Object.assign({},init,{body:JSON.stringify(b)});
+      return of.call(self,input,ini).then(function(r){
+        if(r.status!==400 || tries>=3) return r;
+        return r.clone().json().then(function(j){
+          var err=(j&&j.error)||{}, p=err.param, msg=String(err.message||'');
+          if(!p){ var m=msg.match(/'([a-z_]+)'/); if(m) p=m[1]; }
+          if(p && b.hasOwnProperty(p) && /unsupported|not supported|does not support|only the default/i.test(msg)){
+            delete b[p]; tries++; return go();
+          }
+          return r;
+        },function(){ return r; });
+      });
+    }
+    return go();
+  };
+})();
+</script>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ExamForge — Generador Multiagente de Exámenes</title>
@@ -795,7 +853,7 @@
           <div style="min-width:200px">
             <label for="modelSelect">Modelo</label>
             <select id="modelSelect" onchange="updateCostEstimate()">
-              <option value="gpt-4o-mini" selected>GPT-4o Mini (rápido)</option>
+              <option value="gpt-6-luna" selected>gpt-6-luna · más capaz y más barato (recomendado)</option><option value="gpt-4o-mini">GPT-4o Mini (rápido)</option>
               <option value="gpt-4o">GPT-4o (preciso)</option>
               <option value="gpt-4-turbo">GPT-4 Turbo</option>
             </select>
@@ -1698,7 +1756,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
 // ─── State ────────────────────────────────────────────────────────────────
 let state = {
   apiKey: '',
-  model: 'gpt-4o-mini',
+  model: 'gpt-6-luna',
   material: '',
   subject: '',
   numQuestions: 10,
@@ -2186,8 +2244,8 @@ function clearFieldError(fieldId) {
 // Token pricing (input) per 1M tokens, approximate:
 // precios y velocidades solo de los modelos que se han medido; para
 // cualquier otro, la estimacion se marca como orientativa
-const MODEL_PRICE = { 'gpt-4o-mini': 0.15, 'gpt-4o': 5.00, 'gpt-4-turbo': 10.00 };
-const MODEL_SPEED = { 'gpt-4o-mini': 8,    'gpt-4o': 3,     'gpt-4-turbo': 2 };  // calls/min approx
+const MODEL_PRICE = { 'gpt-6-luna': 0.10, 'gpt-4o-mini': 0.15, 'gpt-4o': 5.00, 'gpt-4-turbo': 10.00 };
+const MODEL_SPEED = { 'gpt-6-luna': 6, 'gpt-4o-mini': 8,    'gpt-4o': 3,     'gpt-4-turbo': 2 };  // calls/min approx
 
 /* Los modelos de la familia GPT-5.6 razonan antes de responder y solo
  * admiten temperature = 1: cualquier otro valor lo rechaza la API. Aqui se
@@ -2233,7 +2291,7 @@ function modeloElegido() {
 }
 
 function esModeloRazonador(modelo) {
-  return /^(gpt-5|o\d)/.test(modelo || '');
+  return /^(gpt-[56]|o\d)/.test(modelo || '');
 }
 
 function temperaturaValida(modelo, pedida) {
@@ -3349,7 +3407,7 @@ function previewExam(idx) {
 }
 
 function resetAll() {
-  state = { apiKey: '', model: 'gpt-4o-mini', material: '', subject: '', numQuestions: 10, numOptions: 5, difficulty: 'intermedio', examLang: 'español', extraInstructions: '', students: [], concepts: [], examPool: [], generatedExams: [], csvData: '' };
+  state = { apiKey: '', model: 'gpt-6-luna', material: '', subject: '', numQuestions: 10, numOptions: 5, difficulty: 'intermedio', examLang: 'español', extraInstructions: '', students: [], concepts: [], examPool: [], generatedExams: [], csvData: '' };
   uploadedFiles = [];
   document.getElementById('fileList').innerHTML = '';
   document.getElementById('fileHint').textContent = T('file_hint');
