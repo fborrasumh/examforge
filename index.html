@@ -412,6 +412,7 @@ table{border-collapse:collapse;width:100%;font-size:13.8px}th{background:var(--p
 .ef-cok{color:#0B5A4E}.ef-cko{color:var(--aviso)}.ef-flag{font-size:13px;color:#7A4B00;margin-top:4px}.ef-note{font-size:12.5px;color:var(--gris);margin-top:3px}
 .ef-mono{font-family:var(--mono);font-size:12.5px;letter-spacing:.03em}
 .ef-notas td{font-size:13px}.ef-resp{font-family:var(--mono);font-size:12px;line-height:1.9;min-width:260px}.ef-bien{color:var(--forjado)}.ef-mal{color:#C62F1B}.ef-na{color:#9AA8B8}.ef-duda{display:inline-block;background:#FFF1D6;border-radius:6px;padding:0 4px}
+.ef-notas .ef-mono{white-space:nowrap}.ef-nom{min-width:240px}.ef-nom img{display:block;width:300px;max-width:100%;border:1px solid var(--linea);border-radius:6px;background:#fff;cursor:zoom-in;margin-bottom:6px}.ef-nom img.grande{width:840px;max-width:none;cursor:zoom-out}.ef-nom input{padding:6px 9px;font-size:13.5px}.ef-nom .fila{display:flex;gap:6px;align-items:center;margin:5px 0}.ef-nom .fila input{flex:1;min-width:0;width:auto}
 #revCont[hidden]{display:none}
 .field input[type=file]{font:14px var(--texto);max-width:100%}
 </style></head>
@@ -499,7 +500,7 @@ table{border-collapse:collapse;width:100%;font-size:13.8px}th{background:var(--p
   </div>
   <h2 class="sec-title" data-i18n="Dónde va cada cosa">Dónde va cada cosa</h2>
   <div class="zonas"><div class="zona l"><h4 data-i18n="Siempre en tu ordenador">Siempre en tu ordenador</h4><ul data-i18n="s.zl">
-<li>Los nombres de tus estudiantes: nunca se envían a la IA</li><li>Los exámenes, los PDF, la plantilla de corrección y las notas</li><li>Los escaneos: se leen en este navegador</li><li>Tu clave de IA</li></ul></div>
+<li>Los nombres que tus estudiantes escriben a mano: se leen en este navegador y nunca se envían a la IA</li><li>Los exámenes, los PDF, la plantilla de corrección y las notas</li><li>Los escaneos: se leen en este navegador</li><li>Tu clave de IA</li></ul></div>
     <div class="zona n"><h4 data-i18n="Sale hacia tu proveedor de IA">Sale hacia tu proveedor de IA</h4><ul data-i18n="s.zn">
 <li>El texto del material, con correos, DNI y teléfonos enmascarados</li><li>Las preguntas, para que el validador las revise</li><li>Antes del primer envío ves lo que sale y cuántas llamadas se harán</li></ul></div></div>
 </section>
@@ -515,7 +516,7 @@ table{border-collapse:collapse;width:100%;font-size:13.8px}th{background:var(--p
 
 <!-- 2 · EXAMEN -->
 <section class="screen" data-step="2">
-  <header class="sh" style="--c:#C98200"><div class="sh-ico"><svg class="i"><use href="#i-sliders"/></svg></div><div><p class="sh-step" data-i18n="s.paso2">Paso 2 de 5</p><h2 data-i18n="s.examen">El examen y tus estudiantes</h2><p class="sh-lede" data-i18n="s.examen.lede">Define el examen. Los nombres solo se imprimen en las hojas: no salen de tu ordenador.</p></div></header>
+  <header class="sh" style="--c:#C98200"><div class="sh-ico"><svg class="i"><use href="#i-sliders"/></svg></div><div><p class="sh-step" data-i18n="s.paso2">Paso 2 de 5</p><h2 data-i18n="s.examen">El examen y las hojas</h2><p class="sh-lede" data-i18n="s.examen.lede">Define el examen y cuántas hojas imprimir. No hace falta ningún dato de tus estudiantes.</p></div></header>
   <div class="card"><h3 data-i18n="Examen">Examen</h3>
     <div class="grid2"><div class="field"><label for="subject" data-i18n="Asignatura">Asignatura</label><input type="text" id="subject" placeholder="Ej.: Biología celular" data-i18n-attr="placeholder:s.ph.asig"></div>
       <div class="field"><label for="titulo" data-i18n="Título impreso en la hoja">Título impreso en la hoja</label><input type="text" id="titulo"></div></div>
@@ -524,8 +525,9 @@ table{border-collapse:collapse;width:100%;font-size:13.8px}th{background:var(--p
       <div class="field"><label for="dif" data-i18n="Dificultad">Dificultad</label><select id="dif"><option value="básico" data-i18n="Básica">Básica</option><option value="intermedio" selected data-i18n="Intermedia">Intermedia</option><option value="avanzado" data-i18n="Avanzada">Avanzada</option><option value="mixto" data-i18n="Mixta">Mixta</option></select></div></div>
     <div class="grid2"><div class="field"><label for="examLang" data-i18n="Idioma del examen">Idioma del examen</label><select id="examLang"></select><p class="help" data-i18n="s.ayuda.idioma">Solo idiomas que la fuente del PDF imprime bien (alfabeto latino de Europa occidental).</p></div>
       <div class="field"><label for="extra" data-i18n="Instrucciones para la IA (opcional)">Instrucciones para la IA (opcional)</label><input type="text" id="extra" placeholder="Ej.: incluye preguntas de aplicación práctica" data-i18n-attr="placeholder:s.ph.extra"></div></div></div>
-  <div class="card"><h3 data-i18n="Estudiantes">Estudiantes</h3>
-    <div class="field"><label for="students" data-i18n="s.alumnos.lbl">Un nombre por línea</label><textarea id="students" rows="7" placeholder="Ana García López&#10;Carlos Martínez&#10;…"></textarea><p class="help" id="stuInfo" aria-live="polite"></p></div>
+  <div class="card"><h3 data-i18n="Hojas">Hojas</h3>
+    <div class="field" style="max-width:360px"><label for="nexam" data-i18n="s.nexam.lbl">Número de exámenes</label><input type="number" id="nexam" min="1" max="1023" step="1" inputmode="numeric"><p class="help" id="stuInfo" aria-live="polite"></p></div>
+    <p class="help" style="margin:-4px 0 16px" data-i18n="s.ayuda.anon">Las hojas no llevan nombres: cada una tiene un número (001, 002…) y un código del tipo abc-def-ghi, y el estudiante escribe su nombre en mayúsculas en las casillas de la cabecera. Al corregir, la app lee esos nombres en tu navegador. Imprime unas cuantas de más para imprevistos.</p>
     <div class="grid2"><div class="field"><label for="nsets" data-i18n="Modelos de examen distintos">Modelos de examen distintos</label><select id="nsets"></select><p class="help" data-i18n="s.ayuda.sets">Cada estudiante recibe un modelo con el orden de las preguntas barajado. Menos modelos, menos llamadas a la IA.</p></div>
       <div class="field"><label class="fa-chk" style="margin-top:26px"><input type="checkbox" id="valAll"> <span data-i18n="s.valall">Revisión de la IA de todos los modelos</span></label><p class="help" data-i18n="s.ayuda.val">Sin marcar, el validador revisa el primer modelo (o todos, si son tres o menos). Marcado, revisa todos: más llamadas.</p></div></div>
     <div class="ef-est" id="est" aria-live="polite"></div>
@@ -563,14 +565,15 @@ table{border-collapse:collapse;width:100%;font-size:13.8px}th{background:var(--p
     <div class="field"><label for="omrPlant" data-i18n="s.omr1">1 · Plantilla de corrección (JSON)</label><p class="help" id="plantInfo"></p><input type="file" id="omrPlant" accept=".json"></div>
     <div class="field"><label for="omrScans" data-i18n="s.omr2">2 · Hojas escaneadas (PDF o imágenes)</label><input type="file" id="omrScans" accept=".pdf,.png,.jpg,.jpeg" multiple><p class="help" data-i18n="s.ayuda.scan">Escanea a 200–300 ppp, en gris o color. No hace falta que las hojas estén rectas.</p></div>
     <div class="field" style="max-width:360px"><label for="omrPen" data-i18n="s.omr3">3 · Penalización por respuesta errónea</label><select id="omrPen"><option value="0" data-i18n="Sin penalización">Sin penalización</option><option value="0.25" data-i18n="s.pen25">0,25 por fallo</option><option value="0.3333" data-i18n="s.pen33">1/3 por fallo</option><option value="0.5" data-i18n="s.pen50">0,5 por fallo</option></select></div>
+    <div class="field"><label for="omrLista" data-i18n="s.omr4">4 · Lista de clase (opcional)</label><textarea id="omrLista" rows="5" autocomplete="off" spellcheck="false" placeholder="García López, Ana&#10;Carlos Martínez Ruiz&#10;…" data-i18n-attr="placeholder:s.ph.lista"></textarea><p class="help" data-i18n="s.ayuda.lista">Un nombre por línea, «Apellidos, Nombre» o «Nombre Apellidos». Sirve para proponer el nombre que cada estudiante ha escrito en su hoja: la lista no se guarda y no sale de este navegador. Sin lista verás la lectura directa de las casillas, que conviene revisar. Si alguien no está en la lista, se propondrá el nombre más parecido: mira siempre el recorte.</p></div>
     <div class="actions"><button class="btn btn-primary" id="btnCorregir" type="button"><svg class="i"><use href="#i-check"/></svg><span data-i18n="s.corregir">Corregir</span></button><button class="btn btn-ghost" id="btnSimula" type="button"><svg class="i"><use href="#i-target"/></svg><span data-i18n="s.simula">Probar con hojas simuladas</span></button></div>
-    <p class="help" data-i18n="s.ayuda.simula">«Probar con hojas simuladas» rellena al azar las hojas de esta sesión, las gira y les añade ruido, y las corrige: sirve para comprobar el circuito antes del examen real.</p>
+    <p class="help" data-i18n="s.ayuda.simula">«Probar con hojas simuladas» rellena al azar las hojas de esta sesión (también las casillas del nombre, con nombres ficticios), las gira y les añade ruido, y las corrige: sirve para comprobar el circuito antes del examen real.</p>
     <div class="ef-bar" id="omrBarW" hidden><span id="omrBar"></span></div><p class="help" id="omrEstado" role="status"></p></div>
   <div class="card" id="notasCard"></div>
 </section>
 </main>
 
-<footer class="fa-foot"><hr><p><b>ExamForge</b> · Fernando Borrás Rocher · Universidad Miguel Hernández de Elche. <span data-i18n="f.pie">Herramienta de apoyo: la IA puede equivocarse. Revisa las preguntas antes de imprimir y las hojas marcadas antes de publicar notas. Tus datos se guardan solo en este navegador.</span> <span data-i18n="f.ver">Versión 2.0 · Licencia MIT.</span></p></footer>
+<footer class="fa-foot"><hr><p><b>ExamForge</b> · Fernando Borrás Rocher · Universidad Miguel Hernández de Elche. <span data-i18n="f.pie">Herramienta de apoyo: la IA puede equivocarse. Revisa las preguntas antes de imprimir y las hojas marcadas antes de publicar notas. Tus datos se guardan solo en este navegador.</span> <span data-i18n="f.ver">Versión 2.1 · Licencia MIT.</span></p></footer>
 <div class="bottomnav"><div class="bn-in"><button class="btn btn-ghost" id="navBack" type="button"><svg class="i"><use href="#i-left"/></svg><span data-i18n="Atrás">Atrás</span></button><div class="bn-hint" id="navHint"></div><button class="btn btn-primary" id="navNext" type="button"><span id="navNextTxt">Siguiente</span><svg class="i"><use href="#i-right"/></svg></button></div></div>
 
 <div class="modal" id="mIA" role="dialog" aria-modal="true" aria-labelledby="mIAT"><div class="modal-box"><div class="modal-head"><h2 id="mIAT" data-i18n="Inteligencia artificial">Inteligencia artificial</h2><button type="button" data-close data-i18n="Cerrar">Cerrar</button></div><div class="modal-body">
@@ -1279,7 +1282,7 @@ const I18N = {
   "s.j3s": "A different exam per student, with boxes, registration marks and a version code.",
   "s.j4b": "You scan and it is marked",
   "s.j4s": "Sheets are read in your browser; doubtful ones are flagged for you to decide.",
-  "s.zl": "<li>Your students’ names: never sent to the AI</li><li>The exams, the PDFs, the marking template and the grades</li><li>The scans: read in this browser</li><li>Your AI key</li>",
+  "s.zl": "<li>The names your students write by hand: read in this browser and never sent to the AI</li><li>The exams, the PDFs, the marking template and the grades</li><li>The scans: read in this browser</li><li>Your AI key</li>",
   "s.zn": "<li>The text of the material, with emails, ID numbers and phone numbers masked</li><li>The questions, so that the validator can review them</li><li>Before the first send you see what goes out and how many calls will be made</li>",
   "s.paso1": "Step 1 of 5",
   "s.paso2": "Step 2 of 5",
@@ -1291,8 +1294,8 @@ const I18N = {
   "s.texto": "Text",
   "s.pega": "Paste notes, outlines or chapters here…",
   "s.ficheros": "Files (PDF, Word, PowerPoint, text)",
-  "s.examen": "The exam and your students",
-  "s.examen.lede": "Define the exam. Names are only printed on the sheets: they never leave your computer.",
+  "s.examen": "The exam and the sheets",
+  "s.examen.lede": "Define the exam and how many sheets to print. No student data is needed.",
   "Examen": "Exam",
   "Asignatura": "Course",
   "s.ph.asig": "E.g.: Cell biology",
@@ -1340,10 +1343,10 @@ const I18N = {
   "s.pen50": "0.5 per wrong answer",
   "s.corregir": "Mark",
   "s.simula": "Try with simulated sheets",
-  "s.ayuda.simula": "“Try with simulated sheets” fills in this session’s sheets at random, rotates them, adds noise and marks them: it lets you check the whole loop before the real exam.",
+  "s.ayuda.simula": "“Try with simulated sheets” fills in this session’s sheets at random (the name boxes too, with fictitious names), rotates them, adds noise and marks them: it lets you check the whole loop before the real exam.",
   "s.enviar": "Send and generate",
   "f.pie": "Support tool: the AI can make mistakes. Review the questions before printing and the flagged sheets before publishing grades. Your data is stored only in this browser.",
-  "f.ver": "Version 2.0 · MIT licence.",
+  "f.ver": "Version 2.1 · MIT licence.",
   "Material": "Material",
   "Generación": "Generation",
   "Revisión": "Review",
@@ -1481,6 +1484,38 @@ const I18N = {
   "Versión": "Version",
   "Código": "Code",
   "Estudiante": "Student",
+  "Hojas": "Sheets",
+  "s.nexam.lbl": "Number of exams",
+  "s.ayuda.anon": "The sheets carry no names: each one has a number (001, 002…) and a code like abc-def-ghi, and the student writes their name in capitals in the boxes at the top. When marking, the app reads those names in your browser. Print a few extra for contingencies.",
+  "s.omr4": "4 · Class list (optional)",
+  "s.ph.lista": "Smith, Anna\nCharles Martin\n…",
+  "s.ayuda.lista": "One name per line, “Surname, Name” or “Name Surname”. It is used to suggest the name each student wrote on their sheet: the list is not saved and never leaves this browser. Without a list you see the direct reading of the boxes, which you should check. If someone is not on the list, the closest name will be suggested: always look at the crop.",
+  "Uno por examen ({0})": "One per exam ({0})",
+  "{0} exámenes, numerados del 001 al {1}.": "{0} exams, numbered 001 to {1}.",
+  "Indica cuántos exámenes quieres imprimir.": "Enter how many exams you want to print.",
+  "Inicio: {0} exámenes, {1} modelo(s), {2} preguntas, {3} opciones, dificultad {4}, idioma {5}.": "Start: {0} exams, {1} model(s), {2} questions, {3} options, difficulty {4}, language {5}.",
+  "Las hojas no llevan datos personales: solo un número y un código. Los nombres que escriben los estudiantes se leen en este navegador al corregir, igual que los escaneos y las notas. A la IA solo sale el material (con correos, DNI y teléfonos enmascarados) y las preguntas para revisarlas. Antes del primer envío ves la muestra.": "The sheets carry no personal data: only a number and a code. The names students write are read in this browser when marking, like the scans and the grades. Only the material (with emails, ID numbers and phone numbers masked) and the questions for review go to the AI. Before the first send you see a sample.",
+  "Nombres escritos a mano": "Handwritten names",
+  "Cada estudiante escribe su nombre en mayúsculas, una letra por casilla. Al corregir, una red neuronal pequeña que va dentro de la app lee cada casilla en tu navegador y, si pegas la lista de clase, propone el nombre más parecido. La lectura puede fallar con letra muy ligada o fuera de las casillas: junto a cada nota ves el recorte de la hoja y puedes corregir o confirmar el nombre.": "Each student writes their name in capitals, one letter per box. When marking, a small neural network built into the app reads each box in your browser and, if you paste the class list, suggests the closest name. Reading can fail with joined-up writing or letters outside the boxes: next to each grade you see the crop of the sheet and can correct or confirm the name.",
+  "Nombre": "Name",
+  "nombre": "name",
+  "nombre_estado": "name_status",
+  "Confirmar": "Confirm",
+  "Nombre escrito por el estudiante (pulsa para ampliar)": "Name written by the student (click to enlarge)",
+  "Nombre de la hoja {0}": "Name on sheet {0}",
+  "confirmado": "confirmed",
+  "coincide con la lista": "matches the list",
+  "revisar nombre": "check name",
+  "lectura sin lista: revisa": "read without a list: check",
+  "sin nombre": "no name",
+  "sin casillas de nombre": "no name boxes",
+  "Borrar notas y nombres": "Delete grades and names",
+  "¿Borrar de este navegador las notas, los recortes y los nombres de esta corrección?": "Delete this marking’s grades, crops and names from this browser?",
+  "Notas y nombres borrados de este navegador.": "Grades and names deleted from this browser.",
+  "Nombres: {0} de {1} hojas simuladas emparejadas con el nombre correcto.": "Names: {0} of {1} simulated sheets matched to the right name.",
+  "Se ha rellenado la lista de clase con los nombres ficticios de la prueba.": "The class list has been filled in with the test’s fictitious names.",
+  "Leyendo los nombres…": "Reading the names…",
+  "{0} nombre(s) por revisar.": "{0} name(s) to check.",
   "Modelo": "Model",
   "Clave": "Key",
   "Reimprimir": "Reprint",
@@ -1553,7 +1588,7 @@ const I18N = {
   "s.j3s": "Um teste diferente por estudante, com quadrículas, marcas de registo e código de versão.",
   "s.j4b": "Digitaliza e é corrigido",
   "s.j4s": "As folhas são lidas no seu navegador; as duvidosas são assinaladas para decidir.",
-  "s.zl": "<li>Os nomes dos seus estudantes: nunca são enviados à IA</li><li>Os testes, os PDF, o modelo de correção e as notas</li><li>As digitalizações: são lidas neste navegador</li><li>A sua chave de IA</li>",
+  "s.zl": "<li>Os nomes que os seus estudantes escrevem à mão: são lidos neste navegador e nunca são enviados à IA</li><li>Os testes, os PDF, o modelo de correção e as notas</li><li>As digitalizações: são lidas neste navegador</li><li>A sua chave de IA</li>",
   "s.zn": "<li>O texto do material, com e-mails, números de identificação e telefones mascarados</li><li>As perguntas, para que o validador as reveja</li><li>Antes do primeiro envio vê o que sai e quantas chamadas serão feitas</li>",
   "s.paso1": "Passo 1 de 5",
   "s.paso2": "Passo 2 de 5",
@@ -1565,8 +1600,8 @@ const I18N = {
   "s.texto": "Texto",
   "s.pega": "Cole aqui apontamentos, esquemas ou capítulos…",
   "s.ficheros": "Ficheiros (PDF, Word, PowerPoint, texto)",
-  "s.examen": "O teste e os seus estudantes",
-  "s.examen.lede": "Defina o teste. Os nomes só são impressos nas folhas: não saem do seu computador.",
+  "s.examen": "O teste e as folhas",
+  "s.examen.lede": "Defina o teste e quantas folhas imprimir. Não é preciso nenhum dado dos seus estudantes.",
   "Examen": "Teste",
   "Asignatura": "Unidade curricular",
   "s.ph.asig": "Ex.: Biologia celular",
@@ -1614,10 +1649,10 @@ const I18N = {
   "s.pen50": "0,5 por erro",
   "s.corregir": "Corrigir",
   "s.simula": "Experimentar com folhas simuladas",
-  "s.ayuda.simula": "«Experimentar com folhas simuladas» preenche ao acaso as folhas desta sessão, roda-as, junta-lhes ruído e corrige-as: serve para verificar o circuito antes do teste real.",
+  "s.ayuda.simula": "«Experimentar com folhas simuladas» preenche ao acaso as folhas desta sessão (também as quadrículas do nome, com nomes fictícios), roda-as, junta-lhes ruído e corrige-as: serve para verificar o circuito antes do teste real.",
   "s.enviar": "Enviar e gerar",
   "f.pie": "Ferramenta de apoio: a IA pode enganar-se. Reveja as perguntas antes de imprimir e as folhas assinaladas antes de publicar notas. Os seus dados são guardados apenas neste navegador.",
-  "f.ver": "Versão 2.0 · Licença MIT.",
+  "f.ver": "Versão 2.1 · Licença MIT.",
   "Material": "Material",
   "Generación": "Geração",
   "Revisión": "Revisão",
@@ -1755,6 +1790,38 @@ const I18N = {
   "Versión": "Versão",
   "Código": "Código",
   "Estudiante": "Estudante",
+  "Hojas": "Folhas",
+  "s.nexam.lbl": "Número de testes",
+  "s.ayuda.anon": "As folhas não levam nomes: cada uma tem um número (001, 002…) e um código do tipo abc-def-ghi, e o estudante escreve o seu nome em maiúsculas nas quadrículas do cabeçalho. Ao corrigir, a app lê esses nomes no seu navegador. Imprima algumas a mais para imprevistos.",
+  "s.omr4": "4 · Lista da turma (opcional)",
+  "s.ph.lista": "Gomes Lopes, Ana\nCarlos Martins\n…",
+  "s.ayuda.lista": "Um nome por linha, «Apelidos, Nome» ou «Nome Apelidos». Serve para propor o nome que cada estudante escreveu na sua folha: a lista não é guardada e não sai deste navegador. Sem lista verá a leitura direta das quadrículas, que convém rever. Se alguém não estiver na lista, será proposto o nome mais parecido: veja sempre o recorte.",
+  "Uno por examen ({0})": "Um por teste ({0})",
+  "{0} exámenes, numerados del 001 al {1}.": "{0} testes, numerados de 001 a {1}.",
+  "Indica cuántos exámenes quieres imprimir.": "Indique quantos testes quer imprimir.",
+  "Inicio: {0} exámenes, {1} modelo(s), {2} preguntas, {3} opciones, dificultad {4}, idioma {5}.": "Início: {0} testes, {1} modelo(s), {2} perguntas, {3} opções, dificuldade {4}, língua {5}.",
+  "Las hojas no llevan datos personales: solo un número y un código. Los nombres que escriben los estudiantes se leen en este navegador al corregir, igual que los escaneos y las notas. A la IA solo sale el material (con correos, DNI y teléfonos enmascarados) y las preguntas para revisarlas. Antes del primer envío ves la muestra.": "As folhas não levam dados pessoais: apenas um número e um código. Os nomes que os estudantes escrevem são lidos neste navegador ao corrigir, tal como as digitalizações e as notas. Para a IA só sai o material (com e-mails, números de identificação e telefones mascarados) e as perguntas para as rever. Antes do primeiro envio vê a amostra.",
+  "Nombres escritos a mano": "Nomes escritos à mão",
+  "Cada estudiante escribe su nombre en mayúsculas, una letra por casilla. Al corregir, una red neuronal pequeña que va dentro de la app lee cada casilla en tu navegador y, si pegas la lista de clase, propone el nombre más parecido. La lectura puede fallar con letra muy ligada o fuera de las casillas: junto a cada nota ves el recorte de la hoja y puedes corregir o confirmar el nombre.": "Cada estudante escreve o seu nome em maiúsculas, uma letra por quadrícula. Ao corrigir, uma pequena rede neuronal incluída na app lê cada quadrícula no seu navegador e, se colar a lista da turma, propõe o nome mais parecido. A leitura pode falhar com letra muito ligada ou fora das quadrículas: junto a cada nota vê o recorte da folha e pode corrigir ou confirmar o nome.",
+  "Nombre": "Nome",
+  "nombre": "nome",
+  "nombre_estado": "estado_nome",
+  "Confirmar": "Confirmar",
+  "Nombre escrito por el estudiante (pulsa para ampliar)": "Nome escrito pelo estudante (clique para ampliar)",
+  "Nombre de la hoja {0}": "Nome da folha {0}",
+  "confirmado": "confirmado",
+  "coincide con la lista": "coincide com a lista",
+  "revisar nombre": "rever nome",
+  "lectura sin lista: revisa": "leitura sem lista: reveja",
+  "sin nombre": "sem nome",
+  "sin casillas de nombre": "sem quadrículas de nome",
+  "Borrar notas y nombres": "Apagar notas e nomes",
+  "¿Borrar de este navegador las notas, los recortes y los nombres de esta corrección?": "Apagar deste navegador as notas, os recortes e os nomes desta correção?",
+  "Notas y nombres borrados de este navegador.": "Notas e nomes apagados deste navegador.",
+  "Nombres: {0} de {1} hojas simuladas emparejadas con el nombre correcto.": "Nomes: {0} de {1} folhas simuladas emparelhadas com o nome correto.",
+  "Se ha rellenado la lista de clase con los nombres ficticios de la prueba.": "A lista da turma foi preenchida com os nomes fictícios da prova.",
+  "Leyendo los nombres…": "A ler os nomes…",
+  "{0} nombre(s) por revisar.": "{0} nome(s) por rever.",
   "Modelo": "Modelo",
   "Clave": "Chave",
   "Reimprimir": "Reimprimir",
@@ -1835,7 +1902,9 @@ const OMR = {
   fuenteEnun: 8.3,
   fuenteOpc: 8.4,
   interlineadoEnun: 3.5,
-  interlineadoOpc: 4.2
+  interlineadoOpc: 4.2,
+  /* casillas del nombre manuscrito (solo en la primera página de cada examen): una letra por casilla, dos filas */
+  nombre: {x0: 21, celdaW: 6.0, celdaH: 7.0, n: 28, filas: [23.5, 34.5], zona: [20.2, 42.2], alto: 27}
 };
 
 const LETRAS = ['A', 'B', 'C', 'D', 'E'];
@@ -1887,20 +1956,28 @@ function decoracion(doc, exam, opciones, version, pagina) {
   doc.text(`${tx.version}: ${String(version).padStart(3, '0')}    ${tx.codigo}: ${exam.code}`,
     W - 21, 9.5, { align: 'right' });
 
-  // hueco para el nombre
-  const anchoHueco = 115;
-  const xEtiqueta = W - 21 - anchoHueco;
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  const etiqueta = exam.student ? `${tx.estudiante}: ${exam.student}` : `${tx.estudiante}:`;
-  doc.text(etiqueta, xEtiqueta, 15.5);
-  if (!exam.student) {
-    const xLinea = xEtiqueta + doc.getTextWidth(`${tx.estudiante}:`) + 2;
-    doc.setLineWidth(0.2);
-    doc.line(xLinea, 16.2, W - 21, 16.2);
-  }
   doc.setLineWidth(0.3);
   doc.line(21, 19, W - 21, 19);
+
+  // casillas para el nombre escrito a mano: solo en la primera página del examen
+  if (pagina === 0 && opciones.casillasNombre !== false) {
+    const N = OMR.nombre;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.text(tx.instrNombre || 'En MAYUSCULAS, una letra por casilla; deja una casilla en blanco entre palabras.', W - 21, N.filas[0] - 0.9, { align: 'right' });
+    doc.setFont('helvetica', 'bold');
+    [tx.nombre || 'NOMBRE', tx.apellidos || 'APELLIDOS'].forEach((et, f) => {
+      doc.setFontSize(6.5);
+      doc.setTextColor(0, 0, 0);
+      doc.text(et.toUpperCase(), N.x0, N.filas[f] - 0.9);
+      doc.setLineWidth(0.2);
+      doc.setDrawColor(150, 150, 150);     // gris claro: se distingue de la tinta del estudiante
+      for (let i = 0; i < N.n; i++) doc.rect(N.x0 + i * N.celdaW, N.filas[f], N.celdaW, N.celdaH, 'D');
+    });
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.3);
+    doc.line(21, N.zona[1] + 1.8, W - 21, N.zona[1] + 1.8);
+  }
 
   // marcas de registro, sobre un pad blanco por si hay fondo
   const dib = (y) => H - y;
@@ -1950,7 +2027,8 @@ function renderExamOMR(doc, exam, opciones, version) {
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
   const anchoCol = (W - 2 * OMR.margenLateral - OMR.separacion) / 2;
-  const yInicio = OMR.top;
+  const conNombre = opciones.casillasNombre !== false;
+  const yInicioDe = p => OMR.top + (p === 0 && conNombre ? OMR.nombre.alto : 0);
   const yFin = H - (OMR.margenMarca + OMR.marca + 6.5);
   const casillas = {};
   let paginas = 1;
@@ -1959,7 +2037,7 @@ function renderExamOMR(doc, exam, opciones, version) {
   decoracion(doc, exam, opciones, version, pagina);
 
   let col = 0;
-  let y = yInicio;
+  let y = yInicioDe(0);
 
   const nuevaColumna = () => {
     col++;
@@ -1970,7 +2048,7 @@ function renderExamOMR(doc, exam, opciones, version) {
       decoracion(doc, exam, opciones, version, pagina);
       col = 0;
     }
-    y = yInicio;
+    y = yInicioDe(pagina);
   };
 
   const altoPregunta = (q) => {
@@ -2045,7 +2123,20 @@ function nuevaPlantilla(doc) {
     lado_bit: OMR.ladoBit * MM,
     bits_version: 10,
     bits_pagina: 2,
+    nombre: geometriaNombre(H),
     examenes: {}
+  };
+}
+
+/** Casillas del nombre en puntos PDF, origen abajo a la izquierda: centro de cada casilla por fila y la zona que se recorta. */
+function geometriaNombre(H) {
+  const N = OMR.nombre;
+  return {
+    pagina: 0,
+    celda: [N.celdaW * MM, N.celdaH * MM],
+    filas: N.filas.map(yTop => Array.from({ length: N.n }, (_, i) =>
+      [(N.x0 + (i + 0.5) * N.celdaW) * MM, (H - yTop - N.celdaH / 2) * MM])),
+    zona: [(N.x0 - 1) * MM, (H - N.zona[1]) * MM, (N.x0 + N.n * N.celdaW + 1) * MM, (H - N.zona[0]) * MM]
   };
 }
 
@@ -2387,13 +2478,183 @@ function leerHoja(gray, w, h, plantilla) {
       dudas.push(i);
     }
   }
+  // zona del nombre manuscrito, enderezada con la misma homografía (solo en la página que la lleva)
+  const N = plantilla.nombre;
+  const nombreZona = N && pagina === (N.pagina || 0) ? rectificaZona(gray, w, h, aImagen, N.zona, PPM_NOMBRE) : null;
   return {
     estado: dudas.length ? 'revisar' : 'ok',
     version, pagina, codigo: ex.codigo, estudiante: ex.estudiante || '',
     respuestas, leidas, dudas, tintas,
-    correctas: ex.correctas, valores: ex.valores || []
+    correctas: ex.correctas, valores: ex.valores || [], nombreZona
   };
 }
+
+/* Resolución a la que se endereza la zona del nombre: 10 píxeles por milímetro (la misma de los datos de entrenamiento del OCR). */
+const PPM_NOMBRE = 10 / MM;
+/** Copia enderezada de una zona de la hoja (puntos PDF, origen abajo): interpolación bilineal sobre el escaneo. */
+function rectificaZona(gray, w, h, aImagen, zona, ppm) {
+  const [x0, y0, x1, y1] = zona;
+  const W = Math.round((x1 - x0) * ppm), H = Math.round((y1 - y0) * ppm), out = new Uint8Array(W * H);
+  for (let j = 0; j < H; j++) {
+    const y = y1 - (j + 0.5) / ppm;
+    for (let i = 0; i < W; i++) {
+      const [px, py] = aImagen(x0 + (i + 0.5) / ppm, y);
+      const fx = Math.min(Math.max(px - 0.5, 0), w - 1.001), fy = Math.min(Math.max(py - 0.5, 0), h - 1.001);
+      const ix = fx | 0, iy = fy | 0, ax = fx - ix, ay = fy - iy, k = iy * w + ix;
+      out[j * W + i] = (gray[k] * (1 - ax) + gray[k + 1] * ax) * (1 - ay) + (gray[k + w] * (1 - ax) + gray[k + w + 1] * ax) * ay;
+    }
+  }
+  return { w: W, h: H, data: out, zona, ppm };
+}
+
+/* ══ OCR de los nombres manuscritos, en el navegador y sin librerías: una letra por casilla.
+   Red convolucional pequeña (3 convoluciones 3×3 de 16, 32 y 48 canales + 64 neuronas, ~48 000 pesos en int8, incrustados abajo),
+   entrenada con letras de 79 tipografías manuscritas deformadas al azar (giro, inclinación, grosor, tinta, ruido, bordes de casilla).
+   No necesita conexión ni envía nada: la imagen de la hoja no sale del navegador. Devuelve, para cada casilla, la probabilidad
+   de cada letra A–Z (o null si está en blanco); el nombre se decide después comparando con la lista de clase. ══ */
+const OCR_LETRAS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const redondeoPar = x => { const f = Math.floor(x), d = x - f; return d > 0.5 ? f + 1 : d < 0.5 ? f : (f % 2 ? f + 1 : f); };   // como round() de Python
+/** Celda en gris (w×h) → imagen 28×28 en [0,1] centrada por su centro de masas, o null si está en blanco. */
+function prepCelda(g, w, h) {
+  const n = w * h, ord = Float32Array.from(g).sort(), pos = 0.8 * (n - 1), i0 = Math.floor(pos);
+  const bg = ord[i0] + (ord[Math.min(i0 + 1, n - 1)] - ord[i0]) * (pos - i0);
+  const v = new Float32Array(n); let m = 0;
+  for (let i = 0; i < n; i++) { v[i] = Math.max(0, bg - g[i]); if (v[i] > m) m = v[i]; }
+  if (m < 50) return null;
+  let on = 0, y0 = h, y1 = -1, x0 = w, x1 = -1;
+  for (let i = 0; i < n; i++) {
+    v[i] /= m; if (v[i] < 0.25) v[i] = 0;
+    if (v[i] > 0.4) { on++; const y = (i / w) | 0, x = i - y * w; if (y < y0) y0 = y; if (y > y1) y1 = y; if (x < x0) x0 = x; if (x > x1) x1 = x; }
+  }
+  if (on < 0.015 * n) return null;
+  const ch = y1 - y0 + 1, cw = x1 - x0 + 1, k = 20 / Math.max(ch, cw);
+  const nh = Math.max(1, redondeoPar(ch * k)), nw = Math.max(1, redondeoPar(cw * k)), o = new Float32Array(nh * nw);
+  for (let i = 0; i < nh; i++) {
+    const a0 = Math.floor(i * ch / nh), a1 = Math.min(ch, Math.ceil((i + 1) * ch / nh));
+    for (let j = 0; j < nw; j++) {
+      const b0 = Math.floor(j * cw / nw), b1 = Math.min(cw, Math.ceil((j + 1) * cw / nw));
+      let sm = 0; for (let a = a0; a < a1; a++) for (let b = b0; b < b1; b++) sm += v[(y0 + a) * w + x0 + b];
+      o[i * nw + j] = sm / ((a1 - a0) * (b1 - b0));
+    }
+  }
+  let tot = 0, sy = 0, sx = 0;
+  for (let i = 0; i < nh; i++) for (let j = 0; j < nw; j++) { const q = o[i * nw + j]; tot += q; sy += q * i; sx += q * j; }
+  const oy = Math.min(Math.max(redondeoPar(14 - sy / tot), 0), 28 - nh), ox = Math.min(Math.max(redondeoPar(14 - sx / tot), 0), 28 - nw);
+  const r = new Float32Array(784); let mx = 0;
+  for (let i = 0; i < nh; i++) for (let j = 0; j < nw; j++) { const q = o[i * nw + j]; r[(oy + i) * 28 + ox + j] = q; if (q > mx) mx = q; }
+  if (mx > 0) for (let i = 0; i < 784; i++) r[i] /= mx;
+  return r;
+}
+let _ocrPesos = null;
+function ocrPesos() {
+  if (_ocrPesos) return _ocrPesos;
+  const M = OCR_MODELO, bin = atob(M.datos), P = {}; let off = 0;
+  for (const k of M.orden) {
+    const n = M.formas[k].reduce((a, b) => a * b, 1), a = new Float32Array(n), sc = M.escalas[k];
+    for (let i = 0; i < n; i++) { const b = bin.charCodeAt(off + i); a[i] = (b > 127 ? b - 256 : b) * sc; }
+    P[k] = a; off += n;
+  }
+  return (_ocrPesos = P);
+}
+/** Red: 28×28 → probabilidades de A–Z. Mismo orden de pesos que el entrenamiento (conv: salida, entrada, 3, 3; densa: entrada × salida). */
+function ocrLetra(x) {
+  const P = ocrPesos(), M = OCR_MODELO;
+  let h = x, C = 1, S = 28;
+  for (let l = 0; l < 3; l++) {
+    const w = P[`c${l}w`], b = P[`c${l}b`], O = M.formas[`c${l}w`][0], o = new Float32Array(O * S * S);
+    for (let oc = 0; oc < O; oc++) for (let ic = 0; ic < C; ic++) for (let dy = 0; dy < 3; dy++) for (let dx = 0; dx < 3; dx++) {
+      const wv = w[((oc * C + ic) * 3 + dy) * 3 + dx]; if (!wv) continue;
+      for (let y = 0; y < S; y++) { const yy = y + dy - 1; if (yy < 0 || yy >= S) continue;
+        const ob = (oc * S + y) * S, ib = (ic * S + yy) * S;
+        for (let xx = 0; xx < S; xx++) { const xs = xx + dx - 1; if (xs >= 0 && xs < S) o[ob + xx] += wv * h[ib + xs]; } }
+    }
+    const S2 = S >> 1, p = new Float32Array(O * S2 * S2);
+    for (let oc = 0; oc < O; oc++) for (let y = 0; y < S2; y++) for (let xx = 0; xx < S2; xx++) {
+      let mx = -Infinity; for (let a = 0; a < 2; a++) for (let c = 0; c < 2; c++) mx = Math.max(mx, o[(oc * S + 2 * y + a) * S + 2 * xx + c]);
+      p[(oc * S2 + y) * S2 + xx] = Math.max(0, mx + b[oc]);
+    }
+    h = p; C = O; S = S2;
+  }
+  const dens = (x, w, b, nOut, relu) => { const o = Float32Array.from(b); for (let i = 0; i < x.length; i++) { const xv = x[i]; if (!xv) continue; for (let j = 0; j < nOut; j++) o[j] += xv * w[i * nOut + j]; } if (relu) for (let j = 0; j < nOut; j++) o[j] = Math.max(0, o[j]); return o; };
+  const z = dens(dens(h, P.d0w, P.d0b, 64, true), P.d1w, P.d1b, 26, false);
+  const mx = Math.max(...z), e = z.map(v => Math.exp(v - mx)), sm = e.reduce((a, b) => a + b, 0);
+  return Array.from(e, v => v / sm);
+}
+/** Lee las casillas del nombre de una zona enderezada: filas de [null | probabilidades A–Z]. */
+function leeNombre(zona, N) {
+  const ppm = zona.ppm, cw = Math.round(N.celda[0] * ppm), ch = Math.round(N.celda[1] * ppm), ins = Math.round(0.6 * MM * ppm);
+  return N.filas.map(fila => fila.map(([cx, cy]) => {
+    const x0 = Math.round((cx - zona.zona[0]) * ppm - cw / 2) + ins, y0 = Math.round((zona.zona[3] - cy) * ppm - ch / 2) + ins;
+    const w = cw - 2 * ins, h = ch - 2 * ins, g = new Float32Array(w * h);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const yy = Math.min(Math.max(y0 + y, 0), zona.h - 1), xx = Math.min(Math.max(x0 + x, 0), zona.w - 1);
+      g[y * w + x] = zona.data[yy * zona.w + xx];
+    }
+    const r = prepCelda(g, w, h);
+    return r ? ocrLetra(r).map(p => Math.round(p * 1000) / 1000) : null;
+  }));
+}
+/** Lectura directa (sin lista de clase): la letra más probable de cada casilla; las casillas en blanco separan palabras. */
+function textoLeido(filas) {
+  return filas.map(f => f.map(p => p ? OCR_LETRAS[p.indexOf(Math.max(...p))] : ' ').join('').replace(/\s+/g, ' ').trim()).filter(Boolean).join(' ');
+}
+/* Normaliza un nombre de la lista: mayúsculas sin tildes; «Apellidos, Nombre» pasa a «Nombre Apellidos» (el orden de las casillas). */
+function normNombre(s) {
+  let x = String(s || '').trim();
+  const c = x.indexOf(','); if (c > 0) x = x.slice(c + 1) + ' ' + x.slice(0, c);
+  return x.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z]+/g, ' ').trim();
+}
+/* Coste de alinear lo leído con un nombre candidato (programación dinámica tipo Levenshtein, con las probabilidades de la red).
+   Fichas leídas: probabilidades de una casilla o ' ' (hueco entre palabras). Menor = más parecido; se normaliza por la longitud. */
+const OCR_COSTE = {hueco: 4, salto: 4.5, tope: 7};
+function fichasLeidas(filas) {
+  const out = [];
+  filas.forEach(f => {
+    let a = 0, b = f.length - 1; while (a <= b && !f[a]) a++; while (b >= a && !f[b]) b--;
+    if (a > b) return;
+    if (out.length) out.push(' ');
+    for (let i = a; i <= b; i++) { if (f[i]) out.push(f[i]); else if (out[out.length - 1] !== ' ') out.push(' '); }
+  });
+  return out;
+}
+function costeNombre(fichas, cand) {
+  const n = fichas.length, m = cand.length, C = OCR_COSTE;
+  if (!n || !m) return Infinity;
+  let prev = new Float64Array(m + 1), cur = new Float64Array(m + 1);
+  for (let j = 1; j <= m; j++) prev[j] = prev[j - 1] + (cand[j - 1] === ' ' ? 1 : C.salto);
+  for (let i = 1; i <= n; i++) {
+    const f = fichas[i - 1];
+    cur[0] = prev[0] + (f === ' ' ? 1 : C.salto);
+    for (let j = 1; j <= m; j++) {
+      const c = cand[j - 1];
+      const sub = f === ' ' ? (c === ' ' ? 0 : C.hueco) : (c === ' ' ? C.hueco : Math.min(C.tope, -Math.log(Math.max(f[c.charCodeAt(0) - 65], 1e-4))));
+      cur[j] = Math.min(prev[j - 1] + sub, prev[j] + (f === ' ' ? 1 : C.salto), cur[j - 1] + (c === ' ' ? 1 : C.salto));
+    }
+    [prev, cur] = [cur, prev];
+  }
+  return prev[m] / Math.max(n, m);
+}
+/**
+ * Empareja cada hoja con un nombre de la lista. hojas: [{filas}] ; lista: nombres tal como los escribe la persona.
+ * Devuelve por hoja {nombre, coste, margen, seguro}. Reparto voraz por coste para que un nombre no se asigne a dos hojas.
+ */
+function emparejaNombres(hojas, lista) {
+  const cands = [...new Set(lista.map(x => x.trim()).filter(Boolean))].map(x => ({orig: x, norm: normNombre(x)})).filter(c => c.norm);
+  const costes = hojas.map(h => { const f = h.filas ? fichasLeidas(h.filas) : []; return cands.map(c => costeNombre(f, c.norm)); });
+  const pares = [];
+  costes.forEach((fila, i) => fila.forEach((c, j) => { if (isFinite(c)) pares.push([c, i, j]); }));
+  pares.sort((a, b) => a[0] - b[0]);
+  const res = hojas.map(() => null), usado = new Set();
+  for (const [c, i, j] of pares) { if (res[i] || usado.has(j)) continue; res[i] = {j, coste: c}; usado.add(j); }
+  return res.map((r, i) => {
+    if (!r) return {nombre: '', coste: Infinity, margen: 0, seguro: false};
+    const otros = costes[i].filter((_, j) => j !== r.j), seg = otros.length ? Math.min(...otros) : Infinity, margen = seg - r.coste;
+    return {nombre: cands[r.j].orig, coste: Math.round(r.coste * 100) / 100, margen: Math.round(Math.min(margen, 99) * 100) / 100,
+      seguro: r.coste <= OCR_UMBRAL.coste && margen >= OCR_UMBRAL.margen};
+  });
+}
+const OCR_UMBRAL = {coste: 1.3, margen: 0.35};
+const OCR_MODELO = {"orden":["c0w","c0b","c1w","c1b","c2w","c2b","d0w","d0b","d1w","d1b"],"formas":{"c0w":[16,1,3,3],"c0b":[16],"c1w":[32,16,3,3],"c1b":[32],"c2w":[48,32,3,3],"c2b":[48],"d0w":[432,64],"d0b":[64],"d1w":[64,26],"d1b":[26]},"escalas":{"c0w":0.01322473,"c0b":0.002087261,"c1w":0.01129226,"c1b":0.002041485,"c2w":0.008478235,"c2b":0.002709018,"d0w":0.007838144,"d0b":0.001444017,"d1w":0.007276461,"d1b":0.005929677},"datos":"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"};
 
 /* ══ ExamForge 2.0 · lógica de la app (estilo Forja).
    La IA propone (análisis, preguntas, revisión); el código comprueba: citas literales del material, estructura, opciones
@@ -2415,7 +2676,8 @@ const GLOS = [
   ['Letras correctas', 'El reparto de la letra correcta (A, B, C…) lo hace el código, no la IA, para que ninguna letra domine. Por eso se desaconsejan las opciones del tipo «A y B son correctas».'],
   ['Hojas y plantilla', 'El PDF tiene un examen por estudiante, con marcas de registro en las esquinas y un código de bits con la versión. La plantilla JSON guarda la posición de cada casilla y la clave de respuestas. Van juntos: si cambias una respuesta después de descargar la plantilla, descárgala de nuevo.'],
   ['Corrección', 'Las hojas escaneadas se leen en el navegador: se corrige el giro y la escala con las marcas, se lee la versión y se mide la tinta de cada casilla. Las marcas dudosas o dobles se señalan con «?» y puedes decidir tú la respuesta antes de descargar las notas.'],
-  ['Privacidad', 'Los nombres de los estudiantes, los exámenes, los escaneos y las notas se quedan en este navegador. A la IA solo sale el material (con correos, DNI y teléfonos enmascarados) y las preguntas para revisarlas. Antes del primer envío ves la muestra.'],
+  ['Privacidad', 'Las hojas no llevan datos personales: solo un número y un código. Los nombres que escriben los estudiantes se leen en este navegador al corregir, igual que los escaneos y las notas. A la IA solo sale el material (con correos, DNI y teléfonos enmascarados) y las preguntas para revisarlas. Antes del primer envío ves la muestra.'],
+  ['Nombres escritos a mano', 'Cada estudiante escribe su nombre en mayúsculas, una letra por casilla. Al corregir, una red neuronal pequeña que va dentro de la app lee cada casilla en tu navegador y, si pegas la lista de clase, propone el nombre más parecido. La lectura puede fallar con letra muy ligada o fuera de las casillas: junto a cada nota ves el recorte de la hoja y puedes corregir o confirmar el nombre.'],
   ['Tu clave de IA', 'Funciona con OpenAI, Google Gemini o Anthropic Claude. La clave se guarda solo en este navegador y cada persona paga su propio uso.'],
   ['Límites', 'La IA puede redactar preguntas ambiguas o con más de una respuesta defendible: revisa siempre el banco antes de imprimir. Una cita verificada indica que el texto citado existe en el material, no que la pregunta sea perfecta. La lectura óptica falla con hojas muy recortadas, impresas a otra escala o con marcas tenues: revisa las hojas marcadas.']
 ];
@@ -2424,25 +2686,27 @@ const MAX_V = 1023;     // 10 bits de versión en la hoja
 const EXAM_LANGS = [['español', 'Español'], ['català', 'Català'], ['euskara', 'Euskara'], ['galego', 'Galego'], ['occitan (aranès)', 'Occitan (aranès)'], ['English', 'English'], ['français', 'Français'], ['Deutsch', 'Deutsch'], ['italiano', 'Italiano'], ['português', 'Português'], ['Nederlands', 'Nederlands'], ['svenska', 'Svenska'], ['dansk', 'Dansk'], ['suomi', 'Suomi'], ['Gaeilge', 'Gaeilge']];
 /* textos impresos en la hoja, en el idioma del examen (los que no están, en inglés) */
 const PDF_TX = {
-  'español': {version: 'Versión', codigo: 'CÓDIGO', estudiante: 'Estudiante', instr: 'Rellena por completo el cuadrado de la opción correcta (una sola por pregunta), con bolígrafo azul o negro.', locale: 'es-ES', titulo: 'Evaluación tipo test'},
-  'català': {version: 'Versió', codigo: 'CODI', estudiante: 'Estudiant', instr: "Omple completament el quadrat de l'opció correcta (només una per pregunta), amb bolígraf blau o negre.", locale: 'ca-ES', titulo: 'Avaluació tipus test'},
-  'euskara': {version: 'Bertsioa', codigo: 'KODEA', estudiante: 'Ikaslea', instr: 'Bete osorik aukera zuzenaren laukia (galdera bakoitzeko bat bakarrik), boligrafo urdin edo beltzarekin.', locale: 'eu-ES', titulo: 'Test motako ebaluazioa'},
-  'galego': {version: 'Versión', codigo: 'CÓDIGO', estudiante: 'Estudante', instr: 'Enche por completo o cadrado da opción correcta (só unha por pregunta), con bolígrafo azul ou negro.', locale: 'gl-ES', titulo: 'Avaliación tipo test'},
-  'English': {version: 'Version', codigo: 'CODE', estudiante: 'Student', instr: 'Fill in the box of the correct option completely (only one per question), using a blue or black pen.', locale: 'en-GB', titulo: 'Multiple-choice test'},
-  'français': {version: 'Version', codigo: 'CODE', estudiante: 'Étudiant(e)', instr: 'Noircissez entièrement la case de la bonne réponse (une seule par question), au stylo bleu ou noir.', locale: 'fr-FR', titulo: 'Questionnaire à choix multiples'},
-  'Deutsch': {version: 'Version', codigo: 'CODE', estudiante: 'Name', instr: 'Füllen Sie das Kästchen der richtigen Antwort vollständig aus (nur eines pro Frage), mit blauem oder schwarzem Stift.', locale: 'de-DE', titulo: 'Multiple-Choice-Prüfung'},
-  'italiano': {version: 'Versione', codigo: 'CODICE', estudiante: 'Studente', instr: "Riempi completamente il quadrato dell'opzione corretta (una sola per domanda), con penna blu o nera.", locale: 'it-IT', titulo: 'Prova a scelta multipla'},
-  'português': {version: 'Versão', codigo: 'CÓDIGO', estudiante: 'Estudante', instr: 'Preencha completamente o quadrado da opção correta (apenas uma por pergunta), com esferográfica azul ou preta.', locale: 'pt-PT', titulo: 'Teste de escolha múltipla'}
+  'español': {version: 'Versión', codigo: 'CÓDIGO', estudiante: 'Estudiante', instr: 'Rellena por completo el cuadrado de la opción correcta (una sola por pregunta), con bolígrafo azul o negro.', locale: 'es-ES', titulo: 'Evaluación tipo test', nombre: 'Nombre', apellidos: 'Apellidos', instrNombre: 'Escribe en MAYÚSCULAS, una letra por casilla; deja una casilla en blanco entre palabras.'},
+  'català': {version: 'Versió', codigo: 'CODI', estudiante: 'Estudiant', instr: "Omple completament el quadrat de l'opció correcta (només una per pregunta), amb bolígraf blau o negre.", locale: 'ca-ES', titulo: 'Avaluació tipus test', nombre: 'Nom', apellidos: 'Cognoms', instrNombre: 'Escriu en MAJÚSCULES, una lletra per casella; deixa una casella en blanc entre paraules.'},
+  'euskara': {version: 'Bertsioa', codigo: 'KODEA', estudiante: 'Ikaslea', instr: 'Bete osorik aukera zuzenaren laukia (galdera bakoitzeko bat bakarrik), boligrafo urdin edo beltzarekin.', locale: 'eu-ES', titulo: 'Test motako ebaluazioa', nombre: 'Izena', apellidos: 'Abizenak', instrNombre: 'Idatzi LETRA LARRIZ, letra bat lauki bakoitzean; utzi lauki bat hutsik hitzen artean.'},
+  'galego': {version: 'Versión', codigo: 'CÓDIGO', estudiante: 'Estudante', instr: 'Enche por completo o cadrado da opción correcta (só unha por pregunta), con bolígrafo azul ou negro.', locale: 'gl-ES', titulo: 'Avaliación tipo test', nombre: 'Nome', apellidos: 'Apelidos', instrNombre: 'Escribe en MAIÚSCULAS, unha letra por cadro; deixa un cadro en branco entre palabras.'},
+  'English': {version: 'Version', codigo: 'CODE', estudiante: 'Student', instr: 'Fill in the box of the correct option completely (only one per question), using a blue or black pen.', locale: 'en-GB', titulo: 'Multiple-choice test', nombre: 'First name', apellidos: 'Surname', instrNombre: 'Write in CAPITALS, one letter per box; leave one box blank between words.'},
+  'français': {version: 'Version', codigo: 'CODE', estudiante: 'Étudiant(e)', instr: 'Noircissez entièrement la case de la bonne réponse (une seule par question), au stylo bleu ou noir.', locale: 'fr-FR', titulo: 'Questionnaire à choix multiples', nombre: 'Prénom', apellidos: 'Nom', instrNombre: 'Écrivez en MAJUSCULES, une lettre par case ; laissez une case vide entre les mots.'},
+  'Deutsch': {version: 'Version', codigo: 'CODE', estudiante: 'Name', instr: 'Füllen Sie das Kästchen der richtigen Antwort vollständig aus (nur eines pro Frage), mit blauem oder schwarzem Stift.', locale: 'de-DE', titulo: 'Multiple-Choice-Prüfung', nombre: 'Vorname', apellidos: 'Nachname', instrNombre: 'In GROSSBUCHSTABEN, ein Buchstabe pro Kästchen; zwischen Wörtern ein Kästchen frei lassen.'},
+  'italiano': {version: 'Versione', codigo: 'CODICE', estudiante: 'Studente', instr: "Riempi completamente il quadrato dell'opzione corretta (una sola per domanda), con penna blu o nera.", locale: 'it-IT', titulo: 'Prova a scelta multipla', nombre: 'Nome', apellidos: 'Cognome', instrNombre: 'Scrivi in MAIUSCOLO, una lettera per casella; lascia una casella vuota tra le parole.'},
+  'português': {version: 'Versão', codigo: 'CÓDIGO', estudiante: 'Estudante', instr: 'Preencha completamente o quadrado da opção correta (apenas uma por pergunta), com esferográfica azul ou preta.', locale: 'pt-PT', titulo: 'Teste de escolha múltipla', nombre: 'Nome', apellidos: 'Apelidos', instrNombre: 'Escreva em MAIÚSCULAS, uma letra por quadrícula; deixe uma quadrícula em branco entre palavras.'}
 };
 const pdfTx = lang => PDF_TX[lang] || PDF_TX.English;
 const LANG_EXAMEN_DE = {es: 'español', en: 'English', pt: 'português', ca: 'català', eu: 'euskara', gl: 'galego'};
 
 let S = {material: '', files: [], cfg: null, run: null, plantSello: null, notas: null, esEjemplo: false};
 let ENVIO_OK = false;   // el aviso previo se pide una vez por sesión: solo en memoria
-const cfgDefecto = () => ({subject: '', titulo: '', nq: 10, nopc: 5, dif: 'intermedio', lang: LANG_EXAMEN_DE[LANG] || 'español', extra: '', students: '', nsets: 0, valAll: false});
+const cfgDefecto = () => ({subject: '', titulo: '', nq: 10, nopc: 5, dif: 'intermedio', lang: LANG_EXAMEN_DE[LANG] || 'español', extra: '', nexam: 30, nsets: 0, valAll: false});
 const C = () => (S.cfg = S.cfg || cfgDefecto());
 const materialTotal = () => [S.material, ...S.files.map(f => `\n\n[${f.nombre}]\n${f.texto}`)].join('').trim();
-const alumnos = () => C().students.split('\n').map(x => x.trim()).filter(Boolean);
+/* sin datos personales: cada examen se identifica por su número (001, 002…) y su código; el nombre lo escribe el estudiante en la hoja */
+const nExamenes = () => Math.max(0, Math.min(MAX_V, Math.floor(+C().nexam || 0)));
+const alumnos = () => Array.from({length: nExamenes()}, (_, i) => String(i + 1).padStart(3, '0'));
 const nModelos = () => { const n = alumnos().length, k = +C().nsets; return Math.max(1, k ? Math.min(k, n || k) : n); };
 
 /* ── comprobaciones por código ─────────────────────────────────────────────────────────── */
@@ -2496,7 +2760,7 @@ function procesaSet(raw, material, nOpc, nq) {
 
 /* ── el ejemplo (sin clave): material, preguntas «de la IA» precalculadas y la misma tubería de comprobación ── */
 const EJ = {
-  es: {subject: 'Biología vegetal', students: 'Ana García López\nCarlos Martínez Ruiz\nElena Rodríguez Pérez\nMiguel Torres Sanz',
+  es: {subject: 'Biología vegetal',
     material: 'La fotosíntesis es el proceso por el que las plantas, las algas y algunas bacterias transforman la energía de la luz en energía química. Tiene lugar en los cloroplastos, donde la clorofila absorbe sobre todo la luz azul y la roja y refleja la verde, por eso las hojas se ven verdes. El proceso tiene dos fases. En la fase luminosa, que ocurre en las membranas de los tilacoides, la luz rompe moléculas de agua, se libera oxígeno y se forman ATP y NADPH. En la fase oscura, o ciclo de Calvin, que ocurre en el estroma, la enzima rubisco fija el dióxido de carbono y, con el ATP y el NADPH, se sintetiza glucosa. La ecuación global combina seis moléculas de dióxido de carbono y seis de agua para obtener una molécula de glucosa y seis de oxígeno. La intensidad de la luz, la concentración de dióxido de carbono y la temperatura limitan la velocidad del proceso. Las plantas C4 y CAM han desarrollado mecanismos para concentrar el dióxido de carbono y reducir la fotorrespiración en climas cálidos y secos.',
     sets: [{questions: [
       {q: '¿Dónde tiene lugar la fase luminosa de la fotosíntesis?', options: {A: 'En las membranas de los tilacoides', B: 'En el estroma', C: 'En las mitocondrias', D: 'En el núcleo'}, correct: 'A', cita: 'En la fase luminosa, que ocurre en las membranas de los tilacoides', concept: 'fase luminosa'},
@@ -2511,7 +2775,7 @@ const EJ = {
       {q: '¿Qué factor NO aparece como limitante de la velocidad de la fotosíntesis?', options: {A: 'La intensidad de la luz', B: 'La temperatura', C: 'La concentración de dióxido de carbono', D: 'La salinidad del suelo'}, correct: 'D', cita: 'La intensidad de la luz, la concentración de dióxido de carbono y la temperatura limitan la velocidad del proceso', concept: 'factores limitantes'},
       {q: '¿Qué consiguen los mecanismos de las plantas C4 y CAM?', options: {A: 'Aumentar la fotorrespiración', B: 'Concentrar el dióxido de carbono', C: 'Eliminar la fase luminosa', D: 'Absorber la luz verde'}, correct: 'B', cita: 'mecanismos para concentrar el dióxido de carbono y reducir la fotorrespiración', concept: 'C4 y CAM'}]}],
     concepts: {subject_analysis: 'Fotosíntesis: fases, localización, ecuación global y factores limitantes.', key_concepts: ['fase luminosa', 'ciclo de Calvin', 'clorofila', 'rubisco', 'plantas C4 y CAM'], question_areas: ['fases', 'orgánulos', 'factores limitantes']}},
-  en: {subject: 'Plant biology', students: 'Anna Green\nCharles Martin\nEllen Roberts\nMichael Turner',
+  en: {subject: 'Plant biology',
     material: 'Photosynthesis is the process by which plants, algae and some bacteria transform light energy into chemical energy. It takes place in the chloroplasts, where chlorophyll mainly absorbs blue and red light and reflects green light, which is why leaves look green. The process has two phases. In the light-dependent phase, which occurs in the thylakoid membranes, light splits water molecules, oxygen is released and ATP and NADPH are formed. In the light-independent phase, or Calvin cycle, which occurs in the stroma, the enzyme rubisco fixes carbon dioxide and, using ATP and NADPH, glucose is synthesised. The overall equation combines six molecules of carbon dioxide and six of water to obtain one molecule of glucose and six of oxygen. Light intensity, carbon dioxide concentration and temperature limit the rate of the process. C4 and CAM plants have developed mechanisms to concentrate carbon dioxide and reduce photorespiration in hot, dry climates.',
     sets: [{questions: [
       {q: 'Where does the light-dependent phase of photosynthesis take place?', options: {A: 'In the thylakoid membranes', B: 'In the stroma', C: 'In the mitochondria', D: 'In the nucleus'}, correct: 'A', cita: 'In the light-dependent phase, which occurs in the thylakoid membranes', concept: 'light-dependent phase'},
@@ -2526,7 +2790,7 @@ const EJ = {
       {q: 'Which factor is NOT given as limiting the rate of photosynthesis?', options: {A: 'Light intensity', B: 'Temperature', C: 'Carbon dioxide concentration', D: 'Soil salinity'}, correct: 'D', cita: 'Light intensity, carbon dioxide concentration and temperature limit the rate of the process', concept: 'limiting factors'},
       {q: 'What do the mechanisms of C4 and CAM plants achieve?', options: {A: 'Increase photorespiration', B: 'Concentrate carbon dioxide', C: 'Remove the light-dependent phase', D: 'Absorb green light'}, correct: 'B', cita: 'mechanisms to concentrate carbon dioxide and reduce photorespiration', concept: 'C4 and CAM'}]}],
     concepts: {subject_analysis: 'Photosynthesis: phases, location, overall equation and limiting factors.', key_concepts: ['light-dependent phase', 'Calvin cycle', 'chlorophyll', 'rubisco', 'C4 and CAM plants'], question_areas: ['phases', 'organelles', 'limiting factors']}},
-  pt: {subject: 'Biologia vegetal', students: 'Ana Gomes Lopes\nCarlos Martins\nElena Rodrigues Pereira\nMiguel Torres',
+  pt: {subject: 'Biologia vegetal',
     material: 'A fotossíntese é o processo pelo qual as plantas, as algas e algumas bactérias transformam a energia da luz em energia química. Ocorre nos cloroplastos, onde a clorofila absorve sobretudo a luz azul e a vermelha e reflete a verde, por isso as folhas parecem verdes. O processo tem duas fases. Na fase luminosa, que ocorre nas membranas dos tilacoides, a luz quebra moléculas de água, liberta-se oxigénio e formam-se ATP e NADPH. Na fase escura, ou ciclo de Calvin, que ocorre no estroma, a enzima rubisco fixa o dióxido de carbono e, com o ATP e o NADPH, sintetiza-se glicose. A equação global combina seis moléculas de dióxido de carbono e seis de água para obter uma molécula de glicose e seis de oxigénio. A intensidade da luz, a concentração de dióxido de carbono e a temperatura limitam a velocidade do processo. As plantas C4 e CAM desenvolveram mecanismos para concentrar o dióxido de carbono e reduzir a fotorrespiração em climas quentes e secos.',
     sets: [{questions: [
       {q: 'Onde ocorre a fase luminosa da fotossíntese?', options: {A: 'Nas membranas dos tilacoides', B: 'No estroma', C: 'Nas mitocôndrias', D: 'No núcleo'}, correct: 'A', cita: 'Na fase luminosa, que ocorre nas membranas dos tilacoides', concept: 'fase luminosa'},
@@ -2546,7 +2810,7 @@ const ejemplo = () => EJ[LANG] || EJ.es;
 function aplicaEjemplo() {
   const e = ejemplo(), lang = LANG_EXAMEN_DE[LANG] || 'español';
   S.material = e.material; S.files = [];
-  S.cfg = {...cfgDefecto(), subject: e.subject, titulo: pdfTx(lang).titulo, nq: 5, nopc: 4, students: e.students, nsets: 2, lang};
+  S.cfg = {...cfgDefecto(), subject: e.subject, titulo: pdfTx(lang).titulo, nq: 5, nopc: 4, nexam: 4, nsets: 2, lang};
   const sets = e.sets.map(s => procesaSet(JSON.parse(JSON.stringify(s)), e.material, 4, 5));
   sets[0].validado = true;
   S.run = {fecha: new Date().toISOString(), modelo: 'ejemplo', concepts: e.concepts, sets, exams: asignaExamenes(sets, alumnos()), fasesHechas: AGENTES.map(a => a[0]), log: [{a: 'sis', k: 'Ejemplo de demostración: las preguntas están precalculadas y pasan por las mismas comprobaciones que las de la IA.', p: []}], ok: true};
@@ -2589,15 +2853,15 @@ function pintaExamen() {
   const c = C();
   $('examLang').innerHTML = EXAM_LANGS.map(([v, n]) => `<option value="${esc(v)}">${esc(n)}</option>`).join('');
   if (!c.titulo) c.titulo = pdfTx(c.lang).titulo;
-  $('subject').value = c.subject; $('titulo').value = c.titulo; $('nq').value = String(c.nq); $('nopc').value = String(c.nopc); $('dif').value = c.dif; $('examLang').value = c.lang; $('extra').value = c.extra; $('students').value = c.students; $('valAll').checked = !!c.valAll;
+  $('subject').value = c.subject; $('titulo').value = c.titulo; $('nq').value = String(c.nq); $('nopc').value = String(c.nopc); $('dif').value = c.dif; $('examLang').value = c.lang; $('extra').value = c.extra; $('nexam').value = c.nexam || ''; $('valAll').checked = !!c.valAll;
   pintaSets(); pintaEst();
 }
 function pintaSets() {
   const n = alumnos().length, c = C();
-  const ops = [[0, t('Uno por estudiante ({0})', n || '—')], ...[1, 2, 3, 4, 6, 8, 10].filter(k => !n || k < n).map(k => [k, String(k)])];
+  const ops = [[0, t('Uno por examen ({0})', n || '—')], ...[1, 2, 3, 4, 6, 8, 10].filter(k => !n || k < n).map(k => [k, String(k)])];
   $('nsets').innerHTML = ops.map(([v, l]) => `<option value="${v}">${esc(l)}</option>`).join('');
   $('nsets').value = ops.some(o => o[0] === +c.nsets) ? String(c.nsets) : '0';
-  $('stuInfo').textContent = n ? t('{0} estudiantes.', n) + (n > MAX_V ? ' ' + t('Máximo {0} por tanda: la hoja codifica la versión con 10 bits.', MAX_V) : '') : t('Añade al menos un estudiante.');
+  $('stuInfo').textContent = n ? t('{0} exámenes, numerados del 001 al {1}.', n, String(n).padStart(3, '0')) + (+c.nexam > MAX_V ? ' ' + t('Máximo {0} por tanda: la hoja codifica la versión con 10 bits.', MAX_V) : '') : t('Indica cuántos exámenes quieres imprimir.');
 }
 const CHUNK_AN = 50000, CHUNK_GEN = 40000, LOTE = 3;
 /* estimación previa: llamadas y tamaño del envío (los precios cambian: no se fijan aquí) */
@@ -2611,8 +2875,8 @@ function pintaEst() {
   const e = estimacion();
   $('est').innerHTML = `<div><b>${e.llamadas}</b><span>${esc(t('llamadas a la IA'))}</span></div><div><b>~${nf(e.tokIn)}</b><span>${esc(t('tokens de entrada'))}</span></div><div><b>~${nf(e.tokOut)}</b><span>${esc(t('tokens de salida'))}</span></div><div><b>~${mmss(e.seg)}</b><span>${esc(t('minutos aprox.'))}</span></div>`;
 }
-const enlaza = (id, k) => $(id).addEventListener(id === 'valAll' ? 'change' : 'input', e => { C()[k] = id === 'valAll' ? e.target.checked : e.target.value; S.esEjemplo = false; guarda(); if (id === 'students') pintaSets(); pintaEst(); });
-enlaza('subject', 'subject'); enlaza('titulo', 'titulo'); enlaza('extra', 'extra'); enlaza('students', 'students'); enlaza('valAll', 'valAll');
+const enlaza = (id, k) => $(id).addEventListener(id === 'valAll' ? 'change' : 'input', e => { C()[k] = id === 'valAll' ? e.target.checked : id === 'nexam' ? Math.max(0, Math.floor(+e.target.value || 0)) : e.target.value; S.esEjemplo = false; guarda(); if (id === 'nexam') pintaSets(); pintaEst(); });
+enlaza('subject', 'subject'); enlaza('titulo', 'titulo'); enlaza('extra', 'extra'); enlaza('nexam', 'nexam'); enlaza('valAll', 'valAll');
 ['nq', 'nopc', 'dif', 'examLang', 'nsets'].forEach(id => $(id).addEventListener('change', e => {
   const k = id === 'examLang' ? 'lang' : id, v = e.target.value, c = C(), tituloDeSerie = !c.titulo || c.titulo === pdfTx(c.lang).titulo;
   c[k] = ['nq', 'nopc', 'nsets'].includes(id) ? +v : v;
@@ -2731,8 +2995,9 @@ Devuelve SOLO este JSON: {"results":[{"n":1,"ok":true,"correct":"B","ambigua":fa
   hecha('validator');
 }
 /* exámenes: cada estudiante recibe un modelo con el orden de las preguntas barajado; versión = posición + 1 */
-const CODIGOS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-function codigo(usados) { let c; do { c = Array.from({length: 6}, () => CODIGOS[Math.floor(Math.random() * CODIGOS.length)]).join(''); } while (usados.has(c)); usados.add(c); return c; }
+/* código abc-def-ghi: 9 letras al azar (sin i, l ni o, que se confunden con 1 y 0), no deducible del número de examen */
+const CODIGOS = 'abcdefghjkmnpqrstuvwxyz';
+function codigo(usados) { let c; do { const r = crypto.getRandomValues(new Uint32Array(9)); c = Array.from(r, (x, i) => CODIGOS[x % CODIGOS.length] + (i === 2 || i === 5 ? '-' : '')).join(''); } while (usados.has(c)); usados.add(c); return c; }
 function asignaExamenes(sets, nombres) {
   const usados = new Set();
   return nombres.slice(0, MAX_V).map((st, i) => { const s = i % sets.length, ord = sets[s].questions.map((_, j) => j); for (let a = ord.length - 1; a > 0; a--) { const b = Math.floor(Math.random() * (a + 1)); [ord[a], ord[b]] = [ord[b], ord[a]]; } return {v: i + 1, code: codigo(usados), student: st, set: s, orden: ord}; });
@@ -2748,8 +3013,8 @@ $('btnGen').onclick = async () => {
   const c = C(), mat = materialTotal(), n = alumnos().length;
   if (mat.length < 200) return toast(t('El material es demasiado corto: añade texto o ficheros en el paso 1.'));
   if (!c.subject.trim()) return toast(t('Escribe el nombre de la asignatura.'));
-  if (!n) return toast(t('Añade al menos un estudiante.'));
-  if (n > MAX_V) return toast(t('Máximo {0} por tanda: la hoja codifica la versión con 10 bits.', MAX_V));
+  if (!n) return toast(t('Indica cuántos exámenes quieres imprimir.'));
+  if (+c.nexam > MAX_V) return toast(t('Máximo {0} por tanda: la hoja codifica la versión con 10 bits.', MAX_V));
   if (S.run?.exams?.length && !S.esEjemplo && !confirm(t('Ya hay exámenes generados. Si generas otros, la plantilla anterior dejará de servir para los nuevos. ¿Continuar?'))) return;
   if (!pideClave()) return;
   const {t: tx, n: masks} = scrub(mat);   // «t» de scrub es el texto enmascarado; no es la función de traducción
@@ -2757,7 +3022,7 @@ $('btnGen').onclick = async () => {
   S.run = {fecha: new Date().toISOString(), modelo: `${PROV[getProv()].n} · ${getMod()}`, log: [], fasesHechas: [], sets: [], exams: [], concepts: null, ok: false};
   S.plantSello = null; S.notas = null; S.esEjemplo = false; OMR_P = null;
   RUN.activo = true; RUN.cancel = false; go(3);
-  logA('sis', 'Inicio: {0} estudiantes, {1} modelo(s), {2} preguntas, {3} opciones, dificultad {4}, idioma {5}.', n, nModelos(), c.nq, c.nopc, c.dif, c.lang);
+  logA('sis', 'Inicio: {0} exámenes, {1} modelo(s), {2} preguntas, {3} opciones, dificultad {4}, idioma {5}.', n, nModelos(), c.nq, c.nopc, c.dif, c.lang);
   if (masks) logA('sis', 'Se han enmascarado {0} dato(s) personales del material antes de enviarlo.', masks);
   try {
     await agenteAnalista(tx); await agenteGenerador(tx, mat); await agenteValidador(); await agenteFormateador();
@@ -2813,7 +3078,7 @@ function pintaPlantAviso() {
 
 /* ── PDF y plantilla (núcleo en omr.js) ── */
 async function cargaJsPDF() { if (!window.jspdf) await cargaLib(['https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js']); return window.jspdf.jsPDF; }
-const examPDF = ex => ({code: ex.code, student: pdfTxt(ex.student).txt, questions: preguntasDe(ex).map(q => ({q: pdfTxt(q.q).txt, options: Object.fromEntries(Object.entries(q.options).map(([k, v]) => [k, pdfTxt(v).txt])), correct: q.correct}))});
+const examPDF = ex => ({code: ex.code, questions: preguntasDe(ex).map(q => ({q: pdfTxt(q.q).txt, options: Object.fromEntries(Object.entries(q.options).map(([k, v]) => [k, pdfTxt(v).txt])), correct: q.correct}))});
 const opcPDF = () => { const c = C(), tx = pdfTx(c.lang); return {asignatura: pdfTxt(c.subject).txt, titulo: pdfTxt(c.titulo || tx.titulo).txt, nOpc: c.nopc, textos: tx}; };
 async function construye(lista = S.run.exams) {
   const J = await cargaJsPDF(), doc = new J({orientation: 'portrait', unit: 'mm', format: 'a4'}), plantilla = nuevaPlantilla(doc), op = opcPDF();
@@ -2822,7 +3087,7 @@ async function construye(lista = S.run.exams) {
     const e = examPDF(ex), {casillas} = renderExamOMR(doc, e, op, ex.v);
     plantilla.examenes[String(ex.v)] = {codigo: ex.code, estudiante: ex.student, correctas: e.questions.map(q => q.correct), valores: preguntasDe(ex).map(q => String(q.options[q.correct] ?? '')), casillas};
   });
-  plantilla.asignatura = C().subject; plantilla.generado = new Date().toISOString(); plantilla.software = `${APP_NAME} 2.0`;
+  plantilla.asignatura = C().subject; plantilla.generado = new Date().toISOString(); plantilla.software = `${APP_NAME} 2.1`;
   return {doc, plantilla};
 }
 const nomFich = () => slug(C().subject || 'examen');
@@ -2876,11 +3141,43 @@ async function corrige(hojas, plantilla, verdad = null) {
     const k = String(r.version);
     porV[k] = porV[k] || {version: r.version, codigo: r.codigo, estudiante: r.estudiante, correctas: r.correctas, valores: r.valores, nOpc: plantilla.examenes[k].casillas['1-4'] ? 5 : 4, respuestas: new Array(r.correctas.length).fill(null), dudas: [], hojas: [], decididas: {}};
     porV[k].hojas.push(hojas[i].nombre); r.leidas.forEach(q => { porV[k].respuestas[q - 1] = r.respuestas[q - 1]; }); porV[k].dudas.push(...r.dudas);
+    if (r.nombreZona) { porV[k].nombreFilas = leeNombre(r.nombreZona, plantilla.nombre); porV[k].nombreImg = zonaAImagen(r.nombreZona); }
   }
   barra(100, t('{0} hojas leídas · {1} exámenes', hojas.length, Object.keys(porV).length));
   S.notas = {fecha: new Date().toISOString(), lista: Object.values(porV).sort((a, b) => a.version - b.version), inc, simulada: !!verdad};
-  await guardaYa(); pintaNotas();
+  aplicaNombres(); await guardaYa(); pintaNotas();
 }
+/* recorte del nombre para enseñarlo junto a la nota (JPEG en gris, 5 px/mm) */
+function zonaAImagen(z) {
+  const cv = document.createElement('canvas'); cv.width = z.w; cv.height = z.h;
+  const x = cv.getContext('2d'), id = x.createImageData(z.w, z.h);
+  for (let i = 0; i < z.data.length; i++) { const v = z.data[i]; id.data[4 * i] = id.data[4 * i + 1] = id.data[4 * i + 2] = v; id.data[4 * i + 3] = 255; }
+  x.putImageData(id, 0, 0);
+  const o = document.createElement('canvas'); o.width = Math.round(z.w / 2); o.height = Math.round(z.h / 2); o.getContext('2d').drawImage(cv, 0, 0, o.width, o.height);
+  return o.toDataURL('image/jpeg', 0.7);
+}
+/* la lista de clase solo vive en memoria: no se guarda en el navegador ni sale de él */
+let LISTA_CLASE = '';
+/* propone el nombre de cada hoja: con lista, el más parecido de la lista (sin repetir); sin lista, la lectura directa.
+   Los nombres fijados a mano mandan y se retiran de la lista para las demás hojas. */
+function aplicaNombres() {
+  const N = S.notas; if (!N) return;
+  const conFilas = N.lista.filter(d => d.nombreFilas);
+  const fijados = new Set(conFilas.filter(d => d.nombreManual).map(d => normNombre(d.nombre)));
+  const lista = LISTA_CLASE.split('\n').map(x => x.trim()).filter(x => x && !fijados.has(normNombre(x)));
+  const libres = conFilas.filter(d => !d.nombreManual);
+  libres.forEach(d => { d.nombreAuto = ''; d.nombreModo = fichasLeidas(d.nombreFilas).length ? 'revisar' : 'vacio'; });
+  const conTinta = libres.filter(d => d.nombreModo !== 'vacio');
+  if (lista.length) {
+    const r = emparejaNombres(conTinta.map(d => ({filas: d.nombreFilas})), lista);
+    conTinta.forEach((d, i) => { d.nombreAuto = r[i].nombre; d.nombreModo = r[i].nombre && r[i].seguro ? 'seguro' : 'revisar'; d.nombreCoste = r[i].coste; d.nombreMargen = r[i].margen; });
+  } else conTinta.forEach(d => { d.nombreAuto = textoLeido(d.nombreFilas); d.nombreModo = 'leido'; });
+}
+const NOMBRE_TX = {manual: 'confirmado', seguro: 'coincide con la lista', revisar: 'revisar nombre', leido: 'lectura sin lista: revisa', vacio: 'sin nombre'};
+const nombreDe = d => d.nombreManual ? d.nombre : (d.nombreAuto || '');
+const modoNombre = d => d.nombreFilas ? (d.nombreManual ? 'manual' : d.nombreModo || 'revisar') : '';
+let _tLista = null;
+$('omrLista').addEventListener('input', e => { LISTA_CLASE = e.target.value; clearTimeout(_tLista); _tLista = setTimeout(async () => { if (!S.notas) return; aplicaNombres(); await guardaYa(); pintaNotas(); }, 400); });
 let corrigiendo = false;
 $('btnCorregir').onclick = async () => {
   if (corrigiendo) return;
@@ -2897,16 +3194,33 @@ $('btnCorregir').onclick = async () => {
   finally { corrigiendo = false; $('btnCorregir').disabled = false; }
 };
 /* prueba del circuito completo sin papel: PDF real → imagen → casillas rellenadas a mano alzada, giro, escala, sombra y ruido → lectura */
+/* nombres inventados para la prueba (los del ejemplo y algunos más); nunca datos reales */
+const FICTICIOS = ['Ana García López', 'Carlos Martínez Ruiz', 'Elena Rodríguez Pérez', 'Miguel Torres Sanz', 'Lucía Fernández Gil', 'Jorge Navarro Ortega', 'Marta Iglesias Vidal', 'Pablo Romero Castro'];
+/* escribe un nombre en las casillas como lo haría un estudiante: mayúsculas, una letra por casilla, trazo y tamaño irregulares */
+function escribeNombre(x, k, pts, N, nombre) {
+  const palabras = nombre.toUpperCase().split(/\s+/), filas = [palabras.slice(0, 1).join(' '), palabras.slice(1).join(' ')];
+  const fuentes = ['cursive', '"Comic Sans MS", cursive', '"Segoe Print", cursive', 'sans-serif', '"Bradley Hand", cursive'];
+  filas.forEach((txt, f) => [...txt].forEach((ch, i) => {
+    if (ch === ' ' || !N.filas[f][i]) return;
+    const [cx, cy] = N.filas[f][i], alto = N.celda[1] * k;
+    x.save(); x.translate(cx * k + (Math.random() - .5) * alto * .15, (pts[1] - cy) * k + (Math.random() - .5) * alto * .12); x.rotate((Math.random() - .5) * .25);
+    x.font = `${Math.round(alto * (.62 + Math.random() * .18))}px ${fuentes[Math.floor(Math.random() * fuentes.length)]}`;
+    x.fillStyle = '#1b2a6b'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(ch, 0, 0); x.restore();
+  }));
+}
 async function simulaHojas(maxEx = 6) {
   const lista = S.run.exams.slice(0, maxEx), {doc, plantilla} = await construye(lista), L = LETRAS_ALL.slice(0, C().nopc);
+  const propios = LISTA_CLASE.split('\n').map(x => x.trim()).filter(Boolean), ficticios = [...(propios.length ? propios : FICTICIOS)].sort(() => Math.random() - .5), nombresSim = {};   // con lista propia se escriben esos nombres (todo en local)
   const paginas = await paginasDePDF(doc.output('arraybuffer'), 'sim', 1500), pts = plantilla.pagina, verdad = {}, hojas = [];
   let p = 0;
   for (const ex of lista) {
     const pe = plantilla.examenes[String(ex.v)], nPag = Math.max(...Object.values(pe.casillas).map(c => c[2] || 0)) + 1, mias = paginas.slice(p, p + nPag); p += nPag;
     const resp = pe.correctas.map((c, i) => i === 1 ? '' : Math.random() < .7 ? c : L[Math.floor(Math.random() * L.length)]);
     verdad[ex.v] = resp;
+    const nom = ficticios[(ex.v - 1) % ficticios.length]; nombresSim[ex.v] = nom;
     mias.forEach((pg, ip) => {
       const cv = pg.canvas, k = cv.width / pts[0], x = cv.getContext('2d');
+      if (ip === (plantilla.nombre?.pagina || 0) && plantilla.nombre) escribeNombre(x, k, pts, plantilla.nombre, nom);
       resp.forEach((r, qi) => { if (!r) return; const c = pe.casillas[`${qi + 1}-${L.indexOf(r)}`]; if ((c[2] || 0) !== ip) return; const cx = c[0] * k, cy = (pts[1] - c[1]) * k, s = plantilla.lado_casilla * k * .42; x.fillStyle = x.strokeStyle = '#1b2a6b'; x.lineWidth = s * .9; x.beginPath(); for (let a = 0; a < 14; a++) x.lineTo(cx + (Math.random() * 2 - 1) * s, cy + (Math.random() * 2 - 1) * s); x.stroke(); x.fillRect(cx - s * .8, cy - s * .8, s * 1.6, s * 1.6); });
       const o = document.createElement('canvas'); o.width = cv.width; o.height = cv.height; const y = o.getContext('2d'); y.fillStyle = '#fff'; y.fillRect(0, 0, o.width, o.height);
       const ang = (Math.random() * 4 - 2) * Math.PI / 180, es = .96 + Math.random() * .03;
@@ -2916,11 +3230,19 @@ async function simulaHojas(maxEx = 6) {
     });
   }
   await corrige(hojas, plantilla, verdad);
+  if (plantilla.nombre) {
+    // sin lista de clase, se rellena con los nombres ficticios (más dos que no están en las hojas) para ver el emparejamiento
+    if (!propios.length) { LISTA_CLASE = [...FICTICIOS].sort().join('\n'); $('omrLista').value = LISTA_CLASE; toast(t('Se ha rellenado la lista de clase con los nombres ficticios de la prueba.'), 6000); }
+    aplicaNombres();
+    const hechas = S.notas.lista.filter(d => nombresSim[d.version]);
+    S.notas.verdadNombres = nombresSim;   // solo hojas simuladas: nombres ficticios o de la lista de esta sesión
+    S.notas.pruebaNombres = {ok: hechas.filter(d => normNombre(nombreDe(d)) === normNombre(nombresSim[d.version])).length, tot: hechas.length};
+  }
   let ac = 0, tot = 0; S.notas.lista.forEach(d => { const v = verdad[d.version] || []; d.respuestas.forEach((r, i) => { tot++; if (r === v[i]) ac++; }); });
   tot = Math.max(tot, Object.values(verdad).reduce((n, v) => n + v.length, 0));
   S.notas.prueba = {ac, tot}; await guardaYa(); pintaNotas(); return {ac, tot};
 }
-$('btnSimula').onclick = async () => { if (corrigiendo || !S.run?.exams?.length) return; corrigiendo = true; $('btnSimula').disabled = true; try { const r = await simulaHojas(); toast(t('Prueba con hojas simuladas: {0} de {1} casillas leídas como se rellenaron.', r.ac, r.tot), 7000); } catch (e) { toast(e.message, 7000); } finally { corrigiendo = false; $('btnSimula').disabled = false; } };
+$('btnSimula').onclick = async () => { if (corrigiendo || !S.run?.exams?.length) return; corrigiendo = true; $('btnSimula').disabled = true; try { const r = await simulaHojas(), pn = S.notas.pruebaNombres; toast(t('Prueba con hojas simuladas: {0} de {1} casillas leídas como se rellenaron.', r.ac, r.tot) + (pn ? ' ' + t('Nombres: {0} de {1} hojas simuladas emparejadas con el nombre correcto.', pn.ok, pn.tot) : ''), 8000); } catch (e) { toast(e.message, 7000); } finally { corrigiendo = false; $('btnSimula').disabled = false; } };
 $('omrPen').onchange = () => pintaNotas();
 /* la nota se calcula al pintar: la respuesta que decide la persona manda sobre la leída */
 function calcula(d, pen) {
@@ -2935,25 +3257,35 @@ const notaTxt = n => n.toLocaleString(locale(), {minimumFractionDigits: 2, maxim
 function pintaNotas() {
   const N = S.notas;
   if (!N || (!N.lista.length && !N.inc.length)) { $('notasCard').innerHTML = `<h3>${esc(t('Notas'))}</h3><p class="empty">${esc(t('Aún no hay notas.'))}</p>`; return; }
-  const pen = +$('omrPen').value || 0, tot = N.lista[0]?.correctas.length || 0;
+  const pen = +$('omrPen').value || 0, tot = N.lista[0]?.correctas.length || 0, porRevisar = N.lista.filter(d => ['revisar', 'leido', 'vacio'].includes(modoNombre(d))).length;
   $('notasCard').innerHTML = `<h3>${esc(t('Notas'))} ${N.simulada ? `<span class="fa-chip aviso">${esc(t('hojas simuladas'))}</span>` : ''}</h3>
     ${N.prueba ? `<div class="${N.prueba.ac === N.prueba.tot ? 'okbox' : 'aviso'}">${esc(t('Prueba con hojas simuladas: {0} de {1} casillas leídas como se rellenaron.', N.prueba.ac, N.prueba.tot))}</div>` : ''}
-    ${N.lista.length ? `<div class="actions" style="margin-top:8px"><button class="btn btn-ghost" id="btnNotas" type="button"><svg class="i"><use href="#i-download"/></svg><span>${esc(t('Descargar notas (CSV)'))}</span></button></div>
+    ${N.pruebaNombres ? `<div class="${N.pruebaNombres.ok === N.pruebaNombres.tot ? 'okbox' : 'aviso'}">${esc(t('Nombres: {0} de {1} hojas simuladas emparejadas con el nombre correcto.', N.pruebaNombres.ok, N.pruebaNombres.tot))}</div>` : ''}
+    ${porRevisar ? `<div class="aviso">${esc(t('{0} nombre(s) por revisar.', porRevisar))}</div>` : ''}
+    ${N.lista.length ? `<div class="actions" style="margin-top:8px"><button class="btn btn-ghost" id="btnNotas" type="button"><svg class="i"><use href="#i-download"/></svg><span>${esc(t('Descargar notas (CSV)'))}</span></button><button class="btn btn-ghost" id="btnBorraNotas" type="button"><svg class="i"><use href="#i-trash"/></svg><span>${esc(t('Borrar notas y nombres'))}</span></button></div>
     <p class="help">${esc(t('Leída/correcta en cada pregunta. «?» = marca dudosa o doble: elige tú la respuesta en el desplegable. «·» = página no leída; «—» = en blanco.'))}</p>
     <div class="table-wrap"><table class="ef-notas"><thead><tr><th>${esc(t('Versión'))}</th><th>${esc(t('Estudiante'))}</th><th>${esc(t('Estado'))}</th><th>${esc(t('Aciertos'))}</th><th>${esc(t('Fallos'))}</th><th>${esc(t('Nota'))}</th><th>${esc(t('Respuestas'))}</th></tr></thead><tbody>
-    ${N.lista.map((d, di) => { const c = calcula(d, pen); return `<tr><td>${d.version}<br><small class="ef-mono">${esc(d.codigo)}</small></td><td>${esc(d.estudiante)}</td><td><span class="fa-chip ${c.estado === 'ok' ? 'ok' : 'aviso'}">${esc(t(EST_TX[c.estado]))}</span></td><td>${c.ac}/${tot}</td><td>${c.fa}</td><td><b>${notaTxt(c.nota)}</b></td>
+    ${N.lista.map((d, di) => { const c = calcula(d, pen); return `<tr><td>${d.version}<br><small class="ef-mono">${esc(d.codigo)}</small></td><td class="ef-nom">${d.nombreFilas ? `${d.nombreImg ? `<img src="${d.nombreImg}" alt="${esc(t('Nombre escrito por el estudiante (pulsa para ampliar)'))}" title="${esc(t('Nombre escrito por el estudiante (pulsa para ampliar)'))}" data-zoom>` : ''}<div class="fila"><input type="text" value="${esc(nombreDe(d))}" data-nom="${di}" aria-label="${esc(t('Nombre de la hoja {0}', d.version))}" autocomplete="off">${modoNombre(d) !== 'manual' ? `<button class="btn btn-ghost btn-sm" type="button" data-okn="${di}">${esc(t('Confirmar'))}</button>` : ''}</div><span class="fa-chip ${['manual', 'seguro'].includes(modoNombre(d)) ? 'ok' : 'aviso'}">${esc(t(NOMBRE_TX[modoNombre(d)]))}</span>` : esc(d.estudiante)}</td><td><span class="fa-chip ${c.estado === 'ok' ? 'ok' : 'aviso'}">${esc(t(EST_TX[c.estado]))}</span></td><td>${c.ac}/${tot}</td><td>${c.fa}</td><td><b>${notaTxt(c.nota)}</b></td>
       <td class="ef-resp">${c.resp.map((r, i) => d.dudas.includes(i + 1) ? `<label class="ef-duda">P${i + 1} <select data-dec="${di}-${i + 1}" aria-label="${esc(t('Respuesta de la pregunta {0}', i + 1))}"><option value="?"${r === '?' ? ' selected' : ''}>?</option><option value=""${r === '' ? ' selected' : ''}>—</option>${LETRAS_ALL.slice(0, d.nOpc || 5).map(l => `<option${r === l ? ' selected' : ''}>${l}</option>`).join('')}</select>/${d.correctas[i]}</label>` : `<span class="${r === null ? 'ef-na' : r === d.correctas[i] ? 'ef-bien' : 'ef-mal'}" title="P${i + 1}">${r === null ? '·' : r === '' ? '—' : r}/${d.correctas[i]}</span>`).join(' ')}</td></tr>`; }).join('')}</tbody></table></div>` : ''}
     ${N.inc.length ? `<div class="aviso">${esc(t('Hojas no leídas:'))} ${N.inc.map(i => esc(`${i.hoja} (${estHoja(i.estado)})`)).join(' · ')}</div>` : ''}`;
+  $$('[data-zoom]').forEach(im => im.onclick = () => im.classList.toggle('grande'));
+  const fijaNombre = async (di, v) => { const d = N.lista[di]; d.nombre = v.trim(); d.nombreManual = !!d.nombre; aplicaNombres(); await guardaYa(); pintaNotas(); };
+  $$('[data-nom]').forEach(i => i.onchange = () => fijaNombre(+i.dataset.nom, i.value));
+  $$('[data-okn]').forEach(b => b.onclick = () => fijaNombre(+b.dataset.okn, $$(`[data-nom="${b.dataset.okn}"]`)[0].value));
+  if ($('btnBorraNotas')) $('btnBorraNotas').onclick = async () => { if (!confirm(t('¿Borrar de este navegador las notas, los recortes y los nombres de esta corrección?'))) return; S.notas = null; await guardaYa(); pintaNotas(); toast(t('Notas y nombres borrados de este navegador.')); };
   $$('[data-dec]').forEach(s => s.onchange = async () => { const [di, q] = s.dataset.dec.split('-').map(Number), v = s.value; if (v === '?') delete N.lista[di].decididas[q]; else N.lista[di].decididas[q] = v; await guardaYa(); pintaNotas(); });
   if ($('btnNotas')) $('btnNotas').onclick = () => {
-    const cab = [t('versión'), t('código'), t('estudiante'), t('estado'), t('aciertos'), t('fallos'), t('sin_leer'), t('nota_sobre_10'), t('dudas')];
+    const cab = [t('versión'), t('código'), t('estudiante'), t('nombre'), t('nombre_estado'), t('estado'), t('aciertos'), t('fallos'), t('sin_leer'), t('nota_sobre_10'), t('dudas')];
     for (let i = 1; i <= tot; i++) cab.push(`P${i}`, `P${i}_${t('correcta')}`, `P${i}_${t('valor')}`);
-    dl(`notas_${nomFich()}.csv`, csvDe(cab, N.lista.map(d => { const c = calcula(d, pen), f = [d.version, d.codigo, d.estudiante, t(EST_TX[c.estado]), c.ac, c.fa, c.sin, notaTxt(c.nota), c.dudas.map(q => 'P' + q).join(' ')]; for (let i = 0; i < tot; i++) f.push(c.resp[i] === null ? '' : c.resp[i], d.correctas[i], d.valores[i] ?? ''); return f; })), 'text/csv;charset=utf-8');
+    dl(`notas_${nomFich()}.csv`, csvDe(cab, N.lista.map(d => { const c = calcula(d, pen), f = [d.version, d.codigo, d.estudiante, nombreDe(d), modoNombre(d) ? t(NOMBRE_TX[modoNombre(d)]) : t('sin casillas de nombre'), t(EST_TX[c.estado]), c.ac, c.fa, c.sin, notaTxt(c.nota), c.dudas.map(q => 'P' + q).join(' ')]; for (let i = 0; i < tot; i++) f.push(c.resp[i] === null ? '' : c.resp[i], d.correctas[i], d.valores[i] ?? ''); return f; })), 'text/csv;charset=utf-8');
   };
 }
 
 /* ── arranque ── */
-(async () => { const p = await cargaEstado(); if (p) S = {...S, ...p}; iniciaUI(); if (S.esEjemplo) aplicaEjemplo(); go(0); })();
+(async () => { const p = await cargaEstado(); if (p) S = {...S, ...p};
+  // 2.1: la lista de nombres desaparece del estado guardado; queda solo cuántos exámenes había
+  if (S.cfg && S.cfg.students !== undefined) { S.cfg.nexam = S.cfg.nexam || String(S.cfg.students).split('\n').filter(x => x.trim()).length || 30; delete S.cfg.students; guarda(); }
+  iniciaUI(); if (S.esEjemplo) aplicaEjemplo(); go(0); })();
 
 </script>
 </body></html>
